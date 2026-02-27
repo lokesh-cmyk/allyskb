@@ -1,11 +1,12 @@
 import { db, schema } from '@nuxthub/db'
-import { desc } from 'drizzle-orm'
+import { count, desc, eq, max, sql } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   const requestLog = useLogger(event)
   await requireAdmin(event)
 
-  const [users, chats, messages] = await Promise.all([
+  // Use SQL aggregation instead of loading all rows into memory
+  const [users, chatStats, messageStats] = await Promise.all([
     db
       .select({
         id: schema.user.id,
@@ -19,58 +20,47 @@ export default defineEventHandler(async (event) => {
       .orderBy(desc(schema.user.createdAt)),
     db
       .select({
-        id: schema.chats.id,
         userId: schema.chats.userId,
-        createdAt: schema.chats.createdAt,
+        chatCount: count(schema.chats.id),
+        lastChatAt: max(schema.chats.createdAt),
       })
-      .from(schema.chats),
+      .from(schema.chats)
+      .groupBy(schema.chats.userId),
     db
       .select({
-        chatId: schema.messages.chatId,
-        createdAt: schema.messages.createdAt,
+        userId: schema.chats.userId,
+        messageCount: count(schema.messages.id),
+        lastMessageAt: max(schema.messages.createdAt),
       })
-      .from(schema.messages),
+      .from(schema.messages)
+      .innerJoin(schema.chats, eq(schema.messages.chatId, schema.chats.id))
+      .groupBy(schema.chats.userId),
   ])
 
-  const chatOwnerById = new Map<string, string>()
-  const chatCountByUserId = new Map<string, number>()
-  const lastSeenByUserId = new Map<string, Date>()
-
-  for (const chat of chats) {
-    chatOwnerById.set(chat.id, chat.userId)
-    chatCountByUserId.set(chat.userId, (chatCountByUserId.get(chat.userId) ?? 0) + 1)
-
-    const previousLastSeen = lastSeenByUserId.get(chat.userId)
-    if (!previousLastSeen || previousLastSeen < chat.createdAt) {
-      lastSeenByUserId.set(chat.userId, chat.createdAt)
-    }
-  }
-
-  const messageCountByUserId = new Map<string, number>()
-
-  for (const message of messages) {
-    const userId = chatOwnerById.get(message.chatId)
-    if (!userId) continue
-
-    messageCountByUserId.set(userId, (messageCountByUserId.get(userId) ?? 0) + 1)
-
-    const previousLastSeen = lastSeenByUserId.get(userId)
-    if (!previousLastSeen || previousLastSeen < message.createdAt) {
-      lastSeenByUserId.set(userId, message.createdAt)
-    }
-  }
+  const chatStatsMap = new Map(chatStats.map(s => [s.userId, s]))
+  const messageStatsMap = new Map(messageStats.map(s => [s.userId, s]))
 
   requestLog.set({ userCount: users.length })
 
-  return users.map(user => ({
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    image: user.image,
-    role: user.role ?? 'user',
-    createdAt: user.createdAt,
-    chatCount: chatCountByUserId.get(user.id) ?? 0,
-    messageCount: messageCountByUserId.get(user.id) ?? 0,
-    lastSeenAt: lastSeenByUserId.get(user.id) ?? null,
-  }))
+  return users.map((user) => {
+    const chat = chatStatsMap.get(user.id)
+    const msg = messageStatsMap.get(user.id)
+    const lastChatAt = chat?.lastChatAt ? new Date(chat.lastChatAt) : null
+    const lastMsgAt = msg?.lastMessageAt ? new Date(msg.lastMessageAt) : null
+    const lastSeenAt = lastChatAt && lastMsgAt
+      ? (lastMsgAt > lastChatAt ? lastMsgAt : lastChatAt)
+      : lastChatAt || lastMsgAt
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      image: user.image,
+      role: user.role ?? 'user',
+      createdAt: user.createdAt,
+      chatCount: chat?.chatCount ?? 0,
+      messageCount: msg?.messageCount ?? 0,
+      lastSeenAt,
+    }
+  })
 })
