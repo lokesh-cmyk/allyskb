@@ -1,3 +1,4 @@
+import { kv } from '@nuxthub/kv'
 import { COMPOSIO_KV_KEYS } from '../../utils/composio/types'
 
 export default defineEventHandler(async (event) => {
@@ -9,7 +10,6 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    const kv = hubKV()
     await kv.del(COMPOSIO_KV_KEYS.session(user.id))
 
     return { success: true }

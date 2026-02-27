@@ -1,4 +1,5 @@
 import { Composio } from '@composio/core'
+import { kv } from '@nuxthub/kv'
 import { COMPOSIO_KV_KEYS, COMPOSIO_SESSION_TTL, COMPOSIO_TOOLKIT_SLUGS } from './types'
 import type { ComposioSessionCache } from './types'
 
@@ -14,7 +15,6 @@ function getComposio(): Composio {
 }
 
 export async function createComposioSession(userId: string, toolkitSlugs: string[] = COMPOSIO_TOOLKIT_SLUGS) {
-  const kv = hubKV()
   const cacheKey = COMPOSIO_KV_KEYS.session(userId)
 
   const cached = await kv.get<ComposioSessionCache>(cacheKey)
