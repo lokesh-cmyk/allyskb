@@ -1,4 +1,5 @@
 import { Composio } from '@composio/core'
+import { COMPOSIO_TOOLKIT_SLUGS } from '../../utils/composio/types'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -10,11 +11,12 @@ export default defineEventHandler(async (event) => {
 
   try {
     const composio = new Composio({ apiKey })
-    const session = await composio.create(user.id, {
-      toolkits: [process.env.COMPOSIO_TOOLKIT_SLUG || 'googlesuper'],
+    const accounts = await composio.connectedAccounts.list({
+      userIds: [user.id],
+      toolkitSlugs: COMPOSIO_TOOLKIT_SLUGS,
+      statuses: ['ACTIVE'],
     })
-    const tools = await session.tools()
-    return { connected: Object.keys(tools).length > 0 }
+    return { connected: accounts.items.length > 0 }
   } catch {
     return { connected: false }
   }

@@ -1,5 +1,6 @@
+import { Composio } from '@composio/core'
 import { kv } from '@nuxthub/kv'
-import { COMPOSIO_KV_KEYS } from '../../utils/composio/types'
+import { COMPOSIO_KV_KEYS, COMPOSIO_TOOLKIT_SLUGS } from '../../utils/composio/types'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -10,6 +11,17 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
+    const composio = new Composio({ apiKey })
+
+    // Revoke active connected accounts on Composio's side
+    const accounts = await composio.connectedAccounts.list({
+      userIds: [user.id],
+      toolkitSlugs: COMPOSIO_TOOLKIT_SLUGS,
+      statuses: ['ACTIVE'],
+    })
+    await Promise.all(accounts.items.map(a => composio.connectedAccounts.delete(a.id)))
+
+    // Clear cached session
     await kv.del(COMPOSIO_KV_KEYS.session(user.id))
 
     return { success: true }

@@ -22,13 +22,22 @@ async function connectGoogle() {
   try {
     const { connectUrl } = await $fetch('/api/connections/google', { method: 'POST' })
     window.open(connectUrl, '_blank')
-    toast.add({ title: 'Complete the connection in the new tab', icon: 'i-lucide-external-link' })
+    toast.add({ title: 'Complete the connection in the new tab, then click "Check status" here', icon: 'i-lucide-external-link' })
   } catch (e) {
     showError(e, { fallback: 'Failed to start Google connection' })
   } finally {
     isConnecting.value = false
   }
 }
+
+// Re-check connection status when user returns to this tab after OAuth
+onMounted(() => {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && !isConnected.value) {
+      refresh()
+    }
+  })
+})
 
 async function disconnectGoogle() {
   isDisconnecting.value = true
@@ -94,13 +103,22 @@ async function disconnectGoogle() {
               :loading="isDisconnecting"
               @click="disconnectGoogle"
             />
-            <UButton
-              v-else
-              label="Connect"
-              size="xs"
-              :loading="isConnecting"
-              @click="connectGoogle"
-            />
+            <div v-else class="flex items-center gap-2">
+              <UButton
+                label="Connect"
+                size="xs"
+                :loading="isConnecting"
+                @click="connectGoogle"
+              />
+              <UButton
+                label="Check status"
+                color="neutral"
+                variant="ghost"
+                size="xs"
+                icon="i-lucide-refresh-cw"
+                @click="refresh()"
+              />
+            </div>
           </div>
         </div>
       </section>

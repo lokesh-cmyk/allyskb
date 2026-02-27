@@ -1,4 +1,6 @@
 import { Composio } from '@composio/core'
+import { kv } from '@nuxthub/kv'
+import { COMPOSIO_KV_KEYS, COMPOSIO_TOOLKIT_SLUGS } from '../../utils/composio/types'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
@@ -9,9 +11,12 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
+    // Clear cached session so a fresh one is created after OAuth completes
+    await kv.del(COMPOSIO_KV_KEYS.session(user.id))
+
     const composio = new Composio({ apiKey })
     const session = await composio.create(user.id, {
-      toolkits: [process.env.COMPOSIO_TOOLKIT_SLUG || 'googlesuper'],
+      toolkits: COMPOSIO_TOOLKIT_SLUGS,
     })
 
     const connectUrl = session.mcp.url.replace('/mcp', '/connect')
