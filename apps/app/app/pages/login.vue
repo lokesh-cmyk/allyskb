@@ -21,14 +21,14 @@ useSeoMeta({
 const route = useRoute()
 const mode = ref<'signin' | 'signup'>('signin')
 const loading = ref(false)
-const githubLoading = ref(false)
+const googleLoading = ref(false)
 const error = ref('')
 const { signIn, signUp } = useUserSession()
 
 const oauthErrors: Record<string, string> = {
-  access_denied: 'Access denied by GitHub.',
-  server_error: 'GitHub encountered an error. Please try again.',
-  temporarily_unavailable: 'GitHub is temporarily unavailable. Please try again later.',
+  access_denied: 'Access denied by Google.',
+  server_error: 'Google encountered an error. Please try again.',
+  temporarily_unavailable: 'Google is temporarily unavailable. Please try again later.',
 }
 
 const shaderColors = reactive({
@@ -79,9 +79,9 @@ async function onSubmit() {
   }
 }
 
-function onGitHub() {
-  githubLoading.value = true
-  signIn.social({ provider: 'github', callbackURL: '/' })
+function onGoogle() {
+  googleLoading.value = true
+  signIn.social({ provider: 'google', callbackURL: '/' })
 }
 </script>
 
@@ -124,14 +124,14 @@ function onGitHub() {
         </div>
 
         <UButton
-          label="Continue with GitHub"
-          icon="i-simple-icons-github"
+          label="Continue with Google"
+          icon="i-simple-icons-google"
           color="neutral"
           variant="outline"
           block
           size="lg"
-          :loading="githubLoading"
-          @click="onGitHub"
+          :loading="googleLoading"
+          @click="onGoogle"
         />
 
         <USeparator label="or" class="my-6" />
