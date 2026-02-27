@@ -139,6 +139,10 @@ export default defineNuxtConfig({
     youtube: {
       apiKey: '',
     },
+    email: {
+      resendApiKey: '',
+      fromEmail: 'noreply@yourdomain.com',
+    },
     public: {
       github: {
         appName: '',
