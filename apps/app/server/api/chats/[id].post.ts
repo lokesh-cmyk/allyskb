@@ -104,6 +104,15 @@ export default defineEventHandler(async (event) => {
       sessionId: existingSessionId || undefined,
     })
 
+    let composioTools: Record<string, unknown> = {}
+    if (!isAdminChat) {
+      try {
+        composioTools = await getComposioTools(user.id)
+      } catch {
+        // Composio unavailable — continue with sandbox tools only
+      }
+    }
+
     const onStepFinish = (stepResult: { usage?: { inputTokens?: number; outputTokens?: number }; toolCalls?: { toolName: string }[] }) => {
       const stepDurationMs = Date.now() - stepStartTime
       stepDurations.push(stepDurationMs)
@@ -154,7 +163,7 @@ export default defineEventHandler(async (event) => {
         onFinish,
       })
       : createSourceAgent({
-        tools: savoir.tools,
+        tools: { ...savoir.tools, ...composioTools },
         getAgentConfig,
         messages,
         defaultModel: model,
