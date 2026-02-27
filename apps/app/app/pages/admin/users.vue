@@ -82,7 +82,7 @@ const columns: TableColumn<AdminUserRow>[] = [
 
 const { data: users, refresh, status } = useLazyFetch<AdminUserRow[]>('/api/admin/users')
 
-// Invitations
+// Invitations (client-only to avoid SSR errors if table doesn't exist yet)
 const { data: invitations, refresh: refreshInvitations } = useLazyFetch<Array<{
   id: string
   email: string
@@ -90,7 +90,7 @@ const { data: invitations, refresh: refreshInvitations } = useLazyFetch<Array<{
   status: 'pending' | 'accepted' | 'expired'
   expiresAt: string
   createdAt: string
-}>>('/api/admin/invitations')
+}>>('/api/admin/invitations', { server: false })
 
 const inviteModalOpen = ref(false)
 const inviteForm = reactive({ email: '', role: 'user' as UserRole })
