@@ -382,6 +382,28 @@ async function deleteAccount() {
 
       <section>
         <h2 class="text-[10px] text-muted uppercase tracking-wide mb-3 font-pixel">
+          Services
+        </h2>
+        <div class="rounded-lg border border-default divide-y divide-default">
+          <NuxtLink to="/settings/connections" class="flex items-center justify-between gap-4 px-4 py-3 hover:bg-elevated/50 transition-colors">
+            <div class="flex items-center gap-3">
+              <UIcon name="i-lucide-plug" class="size-5 text-highlighted" />
+              <div>
+                <p class="text-sm text-highlighted">
+                  Connections
+                </p>
+                <p class="text-xs text-muted">
+                  Connect Google and other services for AI access.
+                </p>
+              </div>
+            </div>
+            <UIcon name="i-lucide-chevron-right" class="size-4 text-muted" />
+          </NuxtLink>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="text-[10px] text-muted uppercase tracking-wide mb-3 font-pixel">
           Developer
         </h2>
         <div class="rounded-lg border border-default divide-y divide-default">
