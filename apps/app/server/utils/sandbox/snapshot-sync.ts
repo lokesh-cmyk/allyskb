@@ -61,20 +61,31 @@ async function getCachedLatestSnapshot(): Promise<CachedSnapshotStatus> {
 }
 
 export async function getSnapshotSyncStatus(): Promise<SnapshotSyncStatus> {
-  const [current, cached] = await Promise.all([
-    getCurrentSnapshot(),
-    getCachedLatestSnapshot(),
-  ])
+  try {
+    const [current, cached] = await Promise.all([
+      getCurrentSnapshot(),
+      getCachedLatestSnapshot(),
+    ])
 
-  const currentSnapshotId = current?.snapshotId ?? null
-  const { latestSnapshotId, latestCreatedAt } = cached
-  const needsSync = latestSnapshotId !== null && latestSnapshotId !== currentSnapshotId
+    const currentSnapshotId = current?.snapshotId ?? null
+    const { latestSnapshotId, latestCreatedAt } = cached
+    const needsSync = latestSnapshotId !== null && latestSnapshotId !== currentSnapshotId
 
-  return {
-    currentSnapshotId,
-    latestSnapshotId,
-    needsSync,
-    latestCreatedAt,
+    return {
+      currentSnapshotId,
+      latestSnapshotId,
+      needsSync,
+      latestCreatedAt,
+    }
+  }
+  catch (error) {
+    console.error('Failed to fetch snapshot sync status:', error)
+    return {
+      currentSnapshotId: null,
+      latestSnapshotId: null,
+      needsSync: false,
+      latestCreatedAt: null,
+    }
   }
 }
 
