@@ -82,6 +82,77 @@ const columns: TableColumn<AdminUserRow>[] = [
 
 const { data: users, refresh, status } = useLazyFetch<AdminUserRow[]>('/api/admin/users')
 
+// Invitations
+const { data: invitations, refresh: refreshInvitations, status: invitationsStatus } = useLazyFetch<Array<{
+  id: string
+  email: string
+  role: UserRole
+  status: 'pending' | 'accepted' | 'expired'
+  expiresAt: string
+  createdAt: string
+}>>('/api/admin/invitations')
+
+const inviteModalOpen = ref(false)
+const inviteForm = reactive({ email: '', role: 'user' as UserRole })
+const inviteSending = ref(false)
+const resendingId = ref<string | null>(null)
+const deletingInviteId = ref<string | null>(null)
+
+const pendingInvitations = computed(() =>
+  invitations.value?.filter(i => i.status === 'pending' && new Date(i.expiresAt) > new Date()) ?? [],
+)
+
+async function sendInvitation() {
+  inviteSending.value = true
+  try {
+    await $fetch('/api/admin/invitations', {
+      method: 'POST',
+      body: { email: inviteForm.email, role: inviteForm.role },
+    })
+    inviteModalOpen.value = false
+    inviteForm.email = ''
+    inviteForm.role = 'user'
+    await refreshInvitations()
+    toast.add({ title: 'Invitation sent', icon: 'i-lucide-check' })
+  }
+  catch (e) {
+    showError(e, { fallback: 'Failed to send invitation' })
+  }
+  finally {
+    inviteSending.value = false
+  }
+}
+
+async function resendInvitation(id: string) {
+  resendingId.value = id
+  try {
+    await $fetch(`/api/admin/invitations/${id}/resend`, { method: 'POST' })
+    await refreshInvitations()
+    toast.add({ title: 'Invitation resent', icon: 'i-lucide-check' })
+  }
+  catch (e) {
+    showError(e, { fallback: 'Failed to resend invitation' })
+  }
+  finally {
+    resendingId.value = null
+  }
+}
+
+async function revokeInvitation(id: string) {
+  deletingInviteId.value = id
+  try {
+    await $fetch(`/api/admin/invitations/${id}`, { method: 'DELETE' })
+    await refreshInvitations()
+    toast.add({ title: 'Invitation revoked', icon: 'i-lucide-check' })
+  }
+  catch (e) {
+    showError(e, { fallback: 'Failed to revoke invitation' })
+  }
+  finally {
+    deletingInviteId.value = null
+  }
+}
+
 const totalUsers = computed(() => users.value?.length ?? 0)
 const adminCount = computed(() => users.value?.filter(u => u.role === 'admin').length ?? 0)
 const activeCount = computed(() => users.value?.filter(u => u.lastSeenAt !== null).length ?? 0)
@@ -184,16 +255,24 @@ async function changeRole(row: AdminUserRow, newRole: UserRole) {
             Manage user access and roles across the platform.
           </p>
         </div>
-        <UTooltip text="Refresh data">
+        <div class="flex items-center gap-2">
           <UButton
-            icon="i-lucide-refresh-cw"
-            color="neutral"
-            variant="ghost"
+            label="Invite User"
+            icon="i-lucide-user-plus"
             size="xs"
-            :loading="status === 'pending'"
-            @click="refresh()"
+            @click="inviteModalOpen = true"
           />
-        </UTooltip>
+          <UTooltip text="Refresh data">
+            <UButton
+              icon="i-lucide-refresh-cw"
+              color="neutral"
+              variant="ghost"
+              size="xs"
+              :loading="status === 'pending'"
+              @click="refresh(); refreshInvitations()"
+            />
+          </UTooltip>
+        </div>
       </div>
     </header>
 
@@ -351,6 +430,58 @@ async function changeRole(row: AdminUserRow, newRole: UserRole) {
       </div>
     </section>
 
+    <section class="mt-8">
+      <h2 class="text-[10px] text-muted uppercase tracking-wide font-pixel mb-3">
+        Pending Invitations
+      </h2>
+
+      <div v-if="pendingInvitations.length === 0" class="rounded-lg border border-default bg-elevated/50 p-6 text-center">
+        <p class="text-sm text-muted">
+          No pending invitations.
+        </p>
+      </div>
+
+      <div v-else class="space-y-2">
+        <div
+          v-for="invite in pendingInvitations"
+          :key="invite.id"
+          class="flex items-center justify-between gap-4 rounded-lg border border-default bg-elevated/50 px-4 py-3"
+        >
+          <div class="min-w-0">
+            <p class="text-xs text-highlighted truncate">
+              {{ invite.email }}
+            </p>
+            <p class="text-[11px] text-muted">
+              Invited as <span class="capitalize">{{ invite.role }}</span>
+              &middot; Expires {{ formatDate(invite.expiresAt) }}
+            </p>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <UTooltip text="Resend invitation">
+              <UButton
+                icon="i-lucide-send"
+                color="neutral"
+                variant="ghost"
+                size="xs"
+                :loading="resendingId === invite.id"
+                @click="resendInvitation(invite.id)"
+              />
+            </UTooltip>
+            <UTooltip text="Revoke invitation">
+              <UButton
+                icon="i-lucide-trash-2"
+                color="error"
+                variant="ghost"
+                size="xs"
+                :loading="deletingInviteId === invite.id"
+                @click="revokeInvitation(invite.id)"
+              />
+            </UTooltip>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <UModal v-model:open="deleteModalOpen">
       <template #content>
         <div class="p-6">
@@ -387,6 +518,56 @@ async function changeRole(row: AdminUserRow, newRole: UserRole) {
               @click="deleteUser()"
             />
           </div>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="inviteModalOpen">
+      <template #content>
+        <div class="p-6">
+          <h3 class="text-sm font-medium text-highlighted mb-4">
+            Invite User
+          </h3>
+          <form class="space-y-4" @submit.prevent="sendInvitation">
+            <div>
+              <label class="text-xs text-muted mb-1 block">Email</label>
+              <UInput
+                v-model="inviteForm.email"
+                type="email"
+                placeholder="user@example.com"
+                size="sm"
+                required
+                class="w-full"
+              />
+            </div>
+            <div>
+              <label class="text-xs text-muted mb-1 block">Role</label>
+              <USelectMenu
+                v-model="inviteForm.role"
+                :items="[
+                  { label: 'User', value: 'user' },
+                  { label: 'Admin', value: 'admin' },
+                ]"
+                size="sm"
+                class="w-full"
+              />
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+              <UButton
+                label="Cancel"
+                color="neutral"
+                variant="ghost"
+                size="sm"
+                @click="inviteModalOpen = false"
+              />
+              <UButton
+                type="submit"
+                label="Send Invitation"
+                size="sm"
+                :loading="inviteSending"
+              />
+            </div>
+          </form>
         </div>
       </template>
     </UModal>
