@@ -25,6 +25,12 @@ const googleLoading = ref(false)
 const error = ref('')
 const { signIn, signUp } = useUserSession()
 
+// Invite-only registration
+const inviteToken = computed(() => route.query.token as string | undefined)
+const inviteData = ref<{ email: string, role: string } | null>(null)
+const inviteError = ref('')
+const inviteLoading = ref(false)
+
 const oauthErrors: Record<string, string> = {
   access_denied: 'Access denied by Google.',
   server_error: 'Google encountered an error. Please try again.',
@@ -39,10 +45,27 @@ const shaderColors = reactive({
   rays: '#a3a3a3',
 })
 
-onMounted(() => {
+onMounted(async () => {
   const queryError = route.query.error as string | undefined
   if (queryError) {
     error.value = oauthErrors[queryError] || `Authentication error: ${queryError}`
+  }
+
+  if (inviteToken.value) {
+    inviteLoading.value = true
+    try {
+      inviteData.value = await $fetch('/api/invitations/validate', {
+        query: { token: inviteToken.value },
+      })
+      mode.value = 'signup'
+      state.email = inviteData.value.email
+    }
+    catch (e: any) {
+      inviteError.value = e?.data?.message || 'Invalid or expired invitation link.'
+    }
+    finally {
+      inviteLoading.value = false
+    }
   }
 })
 
@@ -129,6 +152,24 @@ function onGoogle() {
           @close="error = ''"
         />
 
+        <UAlert
+          v-if="inviteError"
+          color="error"
+          variant="subtle"
+          :title="inviteError"
+          icon="i-lucide-circle-alert"
+          class="mb-4"
+        />
+
+        <UAlert
+          v-if="inviteLoading"
+          color="neutral"
+          variant="subtle"
+          title="Validating invitation..."
+          icon="i-lucide-loader"
+          class="mb-4"
+        />
+
         <UForm :schema :state class="space-y-4" @submit="onSubmit">
           <div class="name-field-wrapper" :class="mode === 'signup' ? 'expanded' : 'collapsed'">
             <div class="name-field-inner">
@@ -145,7 +186,7 @@ function onGoogle() {
           </div>
 
           <UFormField label="Email" name="email">
-            <UInput v-model="state.email" type="email" placeholder="you@example.com" size="lg" class="w-full" />
+            <UInput v-model="state.email" type="email" placeholder="you@example.com" size="lg" class="w-full" :readonly="!!inviteData" />
           </UFormField>
 
           <UFormField label="Password" name="password">
@@ -163,10 +204,15 @@ function onGoogle() {
 
         <p class="mt-6 text-center text-sm text-muted">
           <template v-if="mode === 'signin'">
-            Don't have an account?
-            <button class="text-highlighted font-medium hover:underline cursor-pointer" @click="mode = 'signup'">
+            Have an invitation?
+            <button
+              v-if="inviteToken"
+              class="text-highlighted font-medium hover:underline cursor-pointer"
+              @click="mode = 'signup'"
+            >
               Sign up
             </button>
+            <span v-else class="text-dimmed">Contact an admin to get invited.</span>
           </template>
           <template v-else>
             Already have an account?
