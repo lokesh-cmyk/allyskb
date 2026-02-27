@@ -83,7 +83,7 @@ onMounted(() => {
     <header class="shrink-0 z-20 bg-default border-b border-default">
       <div class="max-w-5xl mx-auto flex items-center justify-between px-4 h-12">
         <NuxtLink to="/" class="flex items-center gap-2">
-          <UIcon :name="appConfig.app.icon" class="size-6 text-highlighted" />
+          <img src="/logo.png" alt="Allys AI" class="size-6 dark:invert">
           <span class="text-lg font-bold font-pixel tracking-wide text-highlighted">{{ appConfig.app.name }}</span>
         </NuxtLink>
 

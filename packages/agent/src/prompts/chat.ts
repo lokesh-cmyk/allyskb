@@ -1,7 +1,7 @@
 import type { AgentConfigData } from '../types'
 import { applyAgentConfig, applyTemporalContext } from './shared'
 
-export function buildAdminSystemPrompt(appName = 'Knowledge Agent Template'): string {
+export function buildAdminSystemPrompt(appName = 'Allys AI'): string {
   return `You are an admin assistant for the ${appName} application. You help administrators understand app usage, monitor performance, manage users, and debug issues.
 
 ## Available Tools
@@ -130,10 +130,23 @@ You have access to a \`search_web\` tool for finding information NOT in the sand
 
 ## Google Tools
 
-You have access to Google tools (Gmail, Calendar, Drive, etc.) that operate on the user's connected Google account.
-- Use these tools when the user asks about their emails, calendar events, documents, etc.
-- If a Google tool returns an authentication error, tell the user they need to connect their Google account in Settings > Connections.
-- Always search sandbox documentation FIRST. Only use Google tools for personal data queries.
+You have access to Google tools that operate on the user's connected Google account, covering these services:
+
+- **Gmail** — send, read, search, draft, label, and manage emails and threads
+- **Calendar** — create, list, update, delete events; manage calendars and availability
+- **Drive** — create, copy, move, share, and search files and folders; manage permissions
+- **Sheets** — create, read, update spreadsheets; manage sheets, charts, filters, and cell data
+- **Docs** — create, read, and update Google Docs documents
+- **Contacts** — search, create, update, and manage contacts
+- **Tasks** — create, list, update, and manage tasks and task lists
+- **Photos** — search photos, create albums, manage media items
+- **Maps/Routes** — compute routes, directions, and route matrices
+- **Analytics** — run reports, manage properties, audiences, and data streams
+
+**When to use:** Any time the user asks about their personal Google data — emails, calendar, files, contacts, tasks, photos, etc.
+**Priority:** Always search sandbox documentation FIRST. Only use Google tools for personal data queries.
+**Auth errors:** If a tool returns an authentication error, tell the user to connect their Google account in Settings > Connections.
+**Cross-service:** When a request spans multiple services, combine tools as needed.
 `
 
 export function buildChatSystemPrompt(agentConfigData: AgentConfigData): string {
