@@ -9,14 +9,13 @@ export default defineServerAuth(({ db }) => {
       enabled: true,
     },
     socialProviders: {
-      github: {
-        clientId: process.env.GITHUB_CLIENT_ID || '',
-        clientSecret: process.env.GITHUB_CLIENT_SECRET || '',
-        scope: ['user:email'],
-        mapProfileToUser: (profile: { name: string, login: string, avatar_url: string }) => ({
-          name: profile.name || profile.login,
-          image: profile.avatar_url,
-          username: profile.login,
+      google: {
+        clientId: process.env.GOOGLE_CLIENT_ID || '',
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+        scope: ['openid', 'email', 'profile'],
+        mapProfileToUser: (profile: { name: string, picture: string }) => ({
+          name: profile.name,
+          image: profile.picture,
         }),
       },
     },
