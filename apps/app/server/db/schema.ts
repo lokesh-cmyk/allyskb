@@ -108,3 +108,17 @@ export const usageStats = pgTable('usage_stats', {
   index('usage_stats_date_idx').on(table.date),
   uniqueIndex('usage_stats_date_user_source_model_idx').on(table.date, table.userId, table.source, table.model),
 ])
+
+export const invitations = pgTable('invitations', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  email: text('email').notNull(),
+  role: text('role', { enum: ['user', 'admin'] }).notNull().default('user'),
+  token: text('token').notNull().$defaultFn(() => crypto.randomUUID()),
+  status: text('status', { enum: ['pending', 'accepted', 'expired'] }).notNull().default('pending'),
+  invitedBy: text('invited_by').notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  ...timestamps,
+}, table => [
+  uniqueIndex('invitations_token_idx').on(table.token),
+  index('invitations_email_idx').on(table.email),
+])
