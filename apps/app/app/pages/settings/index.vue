@@ -49,29 +49,29 @@ async function changePassword() {
 }
 
 const { data: accounts, refresh: refreshAccounts, status: accountsStatus } = useLazyAsyncData('user-accounts', () => client!.listAccounts(), { server: false })
-const isLinkingGithub = ref(false)
+const isLinkingGoogle = ref(false)
 const isUnlinking = ref(false)
 
-const hasGithub = computed(() => accounts.value?.data?.some((a: any) => a.providerId === 'github'))
+const hasGoogle = computed(() => accounts.value?.data?.some((a: any) => a.providerId === 'google'))
 const hasPassword = computed(() => accounts.value?.data?.some((a: any) => a.providerId === 'credential'))
 const accountCount = computed(() => accounts.value?.data?.length ?? 0)
 
-async function linkGithub() {
-  isLinkingGithub.value = true
+async function linkGoogle() {
+  isLinkingGoogle.value = true
   try {
-    await client!.linkSocial({ provider: 'github' })
+    await client!.linkSocial({ provider: 'google' })
   } catch (e) {
-    showError(e, { fallback: 'Failed to link GitHub' })
-    isLinkingGithub.value = false
+    showError(e, { fallback: 'Failed to link Google' })
+    isLinkingGoogle.value = false
   }
 }
 
-async function unlinkGithub() {
+async function unlinkGoogle() {
   isUnlinking.value = true
   try {
-    await client!.unlinkAccount({ providerId: 'github' })
+    await client!.unlinkAccount({ providerId: 'google' })
     await refreshAccounts()
-    toast.add({ title: 'GitHub account unlinked', icon: 'i-lucide-check' })
+    toast.add({ title: 'Google account unlinked', icon: 'i-lucide-check' })
   } catch (e) {
     showError(e, { fallback: 'Failed to unlink account' })
   } finally {
@@ -234,32 +234,32 @@ async function deleteAccount() {
           </div>
           <div v-else class="flex items-center justify-between gap-4 px-4 py-3">
             <div class="flex items-center gap-3">
-              <UIcon name="i-simple-icons-github" class="size-5 text-highlighted" />
+              <UIcon name="i-simple-icons-google" class="size-5 text-highlighted" />
               <div>
                 <p class="text-sm text-highlighted">
-                  GitHub
+                  Google
                 </p>
                 <p class="text-xs text-muted">
-                  {{ hasGithub ? 'Connected' : 'Not connected' }}
+                  {{ hasGoogle ? 'Connected' : 'Not connected' }}
                 </p>
               </div>
             </div>
             <UButton
-              v-if="hasGithub"
+              v-if="hasGoogle"
               label="Unlink"
               color="neutral"
               variant="ghost"
               size="xs"
               :loading="isUnlinking"
               :disabled="accountCount <= 1"
-              @click="unlinkGithub"
+              @click="unlinkGoogle"
             />
             <UButton
               v-else
               label="Link"
               size="xs"
-              :loading="isLinkingGithub"
-              @click="linkGithub"
+              :loading="isLinkingGoogle"
+              @click="linkGoogle"
             />
           </div>
         </div>
