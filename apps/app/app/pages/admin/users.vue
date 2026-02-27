@@ -83,7 +83,7 @@ const columns: TableColumn<AdminUserRow>[] = [
 const { data: users, refresh, status } = useLazyFetch<AdminUserRow[]>('/api/admin/users')
 
 // Invitations
-const { data: invitations, refresh: refreshInvitations, status: invitationsStatus } = useLazyFetch<Array<{
+const { data: invitations, refresh: refreshInvitations } = useLazyFetch<Array<{
   id: string
   email: string
   role: UserRole
@@ -114,11 +114,9 @@ async function sendInvitation() {
     inviteForm.role = 'user'
     await refreshInvitations()
     toast.add({ title: 'Invitation sent', icon: 'i-lucide-check' })
-  }
-  catch (e) {
+  } catch (e) {
     showError(e, { fallback: 'Failed to send invitation' })
-  }
-  finally {
+  } finally {
     inviteSending.value = false
   }
 }
@@ -129,11 +127,9 @@ async function resendInvitation(id: string) {
     await $fetch(`/api/admin/invitations/${id}/resend`, { method: 'POST' })
     await refreshInvitations()
     toast.add({ title: 'Invitation resent', icon: 'i-lucide-check' })
-  }
-  catch (e) {
+  } catch (e) {
     showError(e, { fallback: 'Failed to resend invitation' })
-  }
-  finally {
+  } finally {
     resendingId.value = null
   }
 }
@@ -144,11 +140,9 @@ async function revokeInvitation(id: string) {
     await $fetch(`/api/admin/invitations/${id}`, { method: 'DELETE' })
     await refreshInvitations()
     toast.add({ title: 'Invitation revoked', icon: 'i-lucide-check' })
-  }
-  catch (e) {
+  } catch (e) {
     showError(e, { fallback: 'Failed to revoke invitation' })
-  }
-  finally {
+  } finally {
     deletingInviteId.value = null
   }
 }

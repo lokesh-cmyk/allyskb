@@ -33,12 +33,17 @@ export default defineEventHandler(async (event) => {
     .set({ expiresAt: newExpiresAt })
     .where(eq(schema.invitations.id, id))
 
-  await sendInvitationEmail({
-    to: invitation.email,
-    inviteToken: invitation.token,
-    invitedByName: user.name || user.email || 'An admin',
-    role: invitation.role,
-  })
+  try {
+    await sendInvitationEmail({
+      to: invitation.email,
+      inviteToken: invitation.token,
+      invitedByName: user.name || user.email || 'An admin',
+      role: invitation.role,
+    })
+  } catch (error) {
+    console.error('[invitations] Failed to resend email:', error)
+    throw createError({ statusCode: 502, message: 'Failed to send invitation email' })
+  }
 
   return { success: true }
 })

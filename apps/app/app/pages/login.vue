@@ -190,7 +190,7 @@ function onGoogle() {
               placeholder="you@example.com"
               size="lg"
               class="w-full"
-              :readonly="!!inviteData"
+              :readonly="!!inviteData && mode === 'signup'"
             />
           </UFormField>
 
