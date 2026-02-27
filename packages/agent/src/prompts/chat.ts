@@ -127,6 +127,13 @@ You have access to a \`search_web\` tool for finding information NOT in the sand
 - Include relevant code examples when available
 - Use markdown formatting
 - Cite the source file path
+
+## Google Tools
+
+You have access to Google tools (Gmail, Calendar, Drive, etc.) that operate on the user's connected Google account.
+- Use these tools when the user asks about their emails, calendar events, documents, etc.
+- If a Google tool returns an authentication error, tell the user they need to connect their Google account in Settings > Connections.
+- Always search sandbox documentation FIRST. Only use Google tools for personal data queries.
 `
 
 export function buildChatSystemPrompt(agentConfigData: AgentConfigData): string {
