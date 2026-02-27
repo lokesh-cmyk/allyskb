@@ -117,6 +117,7 @@ export default defineNuxtConfig({
     '/api/chats/**': { isr: false, cache: false },
     '/api/webhooks/**': { isr: false, cache: false },
     '/admin/docs/**': { isr: { expiration: false } },
+    '/api/invitations/**': { auth: false },
     '/admin/**': { auth: { user: { role: 'admin' } as any } },
   },
 

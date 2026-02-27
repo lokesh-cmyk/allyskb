@@ -1,6 +1,6 @@
 import { admin, apiKey } from 'better-auth/plugins'
 import { schema } from '@nuxthub/db'
-import { count, eq } from 'drizzle-orm'
+import { and, count, eq } from 'drizzle-orm'
 import { defineServerAuth } from '@onmax/nuxt-better-auth/config'
 
 export default defineServerAuth(({ db }) => {
@@ -40,10 +40,29 @@ export default defineServerAuth(({ db }) => {
     databaseHooks: {
       user: {
         create: {
-          after: async (user: { id: string }) => {
+          after: async (user: { id: string, email: string }) => {
             const result = await db.select({ total: count() }).from(schema.user)
+            // First user becomes admin automatically
             if (result[0]!.total === 1) {
               await db.update(schema.user).set({ role: 'admin' }).where(eq(schema.user.id, user.id))
+              return
+            }
+
+            // Check for a pending invitation matching this email
+            if (user.email) {
+              const [invitation] = await db
+                .select()
+                .from(schema.invitations)
+                .where(and(
+                  eq(schema.invitations.email, user.email.toLowerCase()),
+                  eq(schema.invitations.status, 'pending'),
+                ))
+                .limit(1)
+
+              if (invitation && new Date() <= invitation.expiresAt) {
+                await db.update(schema.user).set({ role: invitation.role }).where(eq(schema.user.id, user.id))
+                await db.update(schema.invitations).set({ status: 'accepted' }).where(eq(schema.invitations.id, invitation.id))
+              }
             }
           },
         },
