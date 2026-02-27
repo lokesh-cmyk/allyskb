@@ -58,12 +58,10 @@ onMounted(async () => {
         query: { token: inviteToken.value },
       })
       mode.value = 'signup'
-      state.email = inviteData.value.email
-    }
-    catch (e: any) {
+      state.email = inviteData.value!.email
+    } catch (e: any) {
       inviteError.value = e?.data?.message || 'Invalid or expired invitation link.'
-    }
-    finally {
+    } finally {
       inviteLoading.value = false
     }
   }
@@ -186,7 +184,14 @@ function onGoogle() {
           </div>
 
           <UFormField label="Email" name="email">
-            <UInput v-model="state.email" type="email" placeholder="you@example.com" size="lg" class="w-full" :readonly="!!inviteData" />
+            <UInput
+              v-model="state.email"
+              type="email"
+              placeholder="you@example.com"
+              size="lg"
+              class="w-full"
+              :readonly="!!inviteData"
+            />
           </UFormField>
 
           <UFormField label="Password" name="password">
@@ -230,7 +235,6 @@ function onGoogle() {
           :title="appConfig.app.description"
           :ui="{ root: 'p-3', title: 'text-xs font-normal', icon: 'size-4' }"
         />
-
       </div>
     </div>
 

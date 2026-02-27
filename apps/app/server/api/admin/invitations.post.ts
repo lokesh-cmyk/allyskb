@@ -54,6 +54,10 @@ export default defineEventHandler(async (event) => {
     })
     .returning()
 
+  if (!invitation) {
+    throw createError({ statusCode: 500, message: 'Failed to create invitation' })
+  }
+
   try {
     await sendInvitationEmail({
       to: invitation.email,
@@ -61,8 +65,7 @@ export default defineEventHandler(async (event) => {
       invitedByName: user.name || user.email || 'An admin',
       role: invitation.role,
     })
-  }
-  catch (error) {
+  } catch (error) {
     console.error('[invitations] Failed to send email:', error)
   }
 
