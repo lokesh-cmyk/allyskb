@@ -122,3 +122,25 @@ export const invitations = pgTable('invitations', {
   uniqueIndex('invitations_token_idx').on(table.token),
   index('invitations_email_idx').on(table.email),
 ])
+
+export const cliUsage = pgTable('cli_usage', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').notNull(),
+  sessionId: text('session_id').notNull(),
+  project: text('project'),
+  model: text('model'),
+  inputTokens: integer('input_tokens').notNull().default(0),
+  outputTokens: integer('output_tokens').notNull().default(0),
+  turns: integer('turns').notNull().default(0),
+  toolCalls: integer('tool_calls').notNull().default(0),
+  durationMs: integer('duration_ms'),
+  startedAt: timestamp('started_at'),
+  lastActiveAt: timestamp('last_active_at'),
+  metadata: jsonb('metadata'),
+  ...timestamps,
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, table => [
+  uniqueIndex('cli_usage_session_id_idx').on(table.sessionId),
+  index('cli_usage_user_id_idx').on(table.userId),
+  index('cli_usage_created_at_idx').on(table.createdAt),
+])

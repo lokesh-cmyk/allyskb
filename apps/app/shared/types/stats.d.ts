@@ -147,3 +147,57 @@ export interface GlobalStatsResponse {
   availableSources: string[]
   availableModels: string[]
 }
+
+export interface CliUsageRecord {
+  id: string
+  userId: string
+  sessionId: string
+  project: string | null
+  model: string | null
+  inputTokens: number
+  outputTokens: number
+  turns: number
+  toolCalls: number
+  durationMs: number | null
+  startedAt: string | null
+  lastActiveAt: string | null
+  metadata: Record<string, unknown> | null
+}
+
+export interface CliUserStats {
+  userId: string
+  name: string
+  email: string
+  image: string | null
+  sessions: number
+  turns: number
+  inputTokens: number
+  outputTokens: number
+  totalTokens: number
+  estimatedCost: number
+  lastActiveAt: string | null
+}
+
+export interface CliDailyStats {
+  date: string
+  sessions: number
+  inputTokens: number
+  outputTokens: number
+  turns: number
+}
+
+export interface CliUsageResponse {
+  period: { days: number, from: string, to: string }
+  totals: {
+    sessions: number
+    turns: number
+    inputTokens: number
+    outputTokens: number
+    totalTokens: number
+    activeUsers: number
+    estimatedCost: number
+  }
+  byUser: CliUserStats[]
+  daily: CliDailyStats[]
+  byModel: Array<{ model: string, sessions: number, inputTokens: number, outputTokens: number, totalCost: number }>
+}
