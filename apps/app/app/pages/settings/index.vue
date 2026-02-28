@@ -421,6 +421,20 @@ async function deleteAccount() {
             </div>
             <UIcon name="i-lucide-chevron-right" class="size-4 text-muted" />
           </NuxtLink>
+          <NuxtLink to="/settings/cli-tracker" class="flex items-center justify-between gap-4 px-4 py-3 hover:bg-elevated/50 transition-colors">
+            <div class="flex items-center gap-3">
+              <UIcon name="i-lucide-terminal" class="size-5 text-highlighted" />
+              <div>
+                <p class="text-sm text-highlighted">
+                  CLI Tracker
+                </p>
+                <p class="text-xs text-muted">
+                  Set up Claude Code CLI usage tracking on your machine.
+                </p>
+              </div>
+            </div>
+            <UIcon name="i-lucide-chevron-right" class="size-4 text-muted" />
+          </NuxtLink>
         </div>
       </section>
 
