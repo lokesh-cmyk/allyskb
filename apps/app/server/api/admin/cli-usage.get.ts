@@ -29,13 +29,13 @@ export default defineEventHandler(async (event): Promise<CliUsageResponse> => {
   const userIds = [...new Set(records.map(r => r.userId))]
   const users = userIds.length > 0
     ? await db.select({
-        id: schema.user.id,
-        name: schema.user.name,
-        email: schema.user.email,
-        image: schema.user.image,
-      }).from(schema.user).where(
-        sql`${schema.user.id} IN ${userIds}`,
-      )
+      id: schema.user.id,
+      name: schema.user.name,
+      email: schema.user.email,
+      image: schema.user.image,
+    }).from(schema.user).where(
+      sql`${schema.user.id} IN ${userIds}`,
+    )
     : []
   const userMap = new Map(users.map(u => [u.id, u]))
 

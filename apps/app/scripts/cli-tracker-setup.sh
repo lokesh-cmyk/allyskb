@@ -18,7 +18,7 @@ echo "=== Claude Code CLI Tracker Setup ==="
 echo ""
 
 # Step 1: Get app URL
-read -rp "Enter your app URL (e.g. https://your-app.vercel.app): " APP_URL
+read -rp "Enter your app URL (e.g. https://allyskb-app.vercel.app/): " APP_URL
 APP_URL="${APP_URL%/}" # Remove trailing slash
 
 if [ -z "$APP_URL" ]; then

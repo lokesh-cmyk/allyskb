@@ -684,37 +684,49 @@ function getSourceColor(index: number): string {
       <template v-else-if="cliStats">
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
           <div class="rounded-lg border border-default bg-elevated/50 p-4">
-            <p class="text-xs text-muted mb-1">Sessions</p>
+            <p class="text-xs text-muted mb-1">
+              Sessions
+            </p>
             <p class="text-2xl font-semibold text-highlighted tabular-nums">
               {{ formatNumber(cliStats.totals.sessions) }}
             </p>
           </div>
           <div class="rounded-lg border border-default bg-elevated/50 p-4">
-            <p class="text-xs text-muted mb-1">Turns</p>
+            <p class="text-xs text-muted mb-1">
+              Turns
+            </p>
             <p class="text-2xl font-semibold text-highlighted tabular-nums">
               {{ formatNumber(cliStats.totals.turns) }}
             </p>
           </div>
           <div class="rounded-lg border border-default bg-elevated/50 p-4">
-            <p class="text-xs text-muted mb-1">Total Tokens</p>
+            <p class="text-xs text-muted mb-1">
+              Total Tokens
+            </p>
             <p class="text-2xl font-semibold text-highlighted tabular-nums">
               {{ formatCompactNumber(cliStats.totals.totalTokens) }}
             </p>
           </div>
           <div class="rounded-lg border border-default bg-elevated/50 p-4">
-            <p class="text-xs text-muted mb-1">Active Users</p>
+            <p class="text-xs text-muted mb-1">
+              Active Users
+            </p>
             <p class="text-2xl font-semibold text-highlighted tabular-nums">
               {{ cliStats.totals.activeUsers }}
             </p>
           </div>
           <div class="rounded-lg border border-default bg-elevated/50 p-4">
-            <p class="text-xs text-muted mb-1">Est. Cost</p>
+            <p class="text-xs text-muted mb-1">
+              Est. Cost
+            </p>
             <p class="text-2xl font-semibold text-highlighted tabular-nums">
               {{ formatCost(cliStats.totals.estimatedCost) }}
             </p>
           </div>
           <div class="rounded-lg border border-default bg-elevated/50 p-4">
-            <p class="text-xs text-muted mb-1">Avg Turns/Session</p>
+            <p class="text-xs text-muted mb-1">
+              Avg Turns/Session
+            </p>
             <p class="text-2xl font-semibold text-highlighted tabular-nums">
               {{ cliStats.totals.sessions > 0 ? Math.round(cliStats.totals.turns / cliStats.totals.sessions) : 0 }}
             </p>
@@ -722,7 +734,9 @@ function getSourceColor(index: number): string {
         </div>
 
         <section class="mb-10">
-          <h2 class="text-sm font-medium text-highlighted mb-3">CLI Usage Over Time</h2>
+          <h2 class="text-sm font-medium text-highlighted mb-3">
+            CLI Usage Over Time
+          </h2>
           <div v-if="cliStats.daily.some(d => d.sessions > 0)" class="rounded-lg border border-default bg-elevated/50 p-4 overflow-hidden">
             <div class="h-40 flex items-end gap-0.5 px-4">
               <div
@@ -743,22 +757,38 @@ function getSourceColor(index: number): string {
             </div>
           </div>
           <div v-else class="rounded-lg border border-dashed border-default p-6 text-center">
-            <p class="text-sm text-muted">No CLI usage data in this period</p>
+            <p class="text-sm text-muted">
+              No CLI usage data in this period
+            </p>
           </div>
         </section>
 
         <section class="mb-10">
-          <h2 class="text-xs text-highlighted mb-3 font-pixel tracking-wide uppercase">Usage By Developer</h2>
+          <h2 class="text-xs text-highlighted mb-3 font-pixel tracking-wide uppercase">
+            Usage By Developer
+          </h2>
           <div v-if="cliStats.byUser.length > 0" class="rounded-lg border border-default overflow-hidden">
             <table class="w-full text-sm">
               <thead class="bg-elevated/50">
                 <tr class="border-b border-default text-xs text-muted">
-                  <th class="text-left font-medium px-4 py-2.5">Developer</th>
-                  <th class="text-right font-medium px-3 py-2.5">Sessions</th>
-                  <th class="text-right font-medium px-3 py-2.5">Turns</th>
-                  <th class="text-right font-medium px-3 py-2.5">Tokens</th>
-                  <th class="text-right font-medium px-3 py-2.5">Est. Cost</th>
-                  <th class="text-right font-medium px-4 py-2.5">Last Active</th>
+                  <th class="text-left font-medium px-4 py-2.5">
+                    Developer
+                  </th>
+                  <th class="text-right font-medium px-3 py-2.5">
+                    Sessions
+                  </th>
+                  <th class="text-right font-medium px-3 py-2.5">
+                    Turns
+                  </th>
+                  <th class="text-right font-medium px-3 py-2.5">
+                    Tokens
+                  </th>
+                  <th class="text-right font-medium px-3 py-2.5">
+                    Est. Cost
+                  </th>
+                  <th class="text-right font-medium px-4 py-2.5">
+                    Last Active
+                  </th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-default">
@@ -770,15 +800,27 @@ function getSourceColor(index: number): string {
                         <UIcon name="i-lucide-user" class="size-3 text-muted" />
                       </div>
                       <div class="min-w-0">
-                        <p class="text-highlighted truncate text-xs">{{ dev.name }}</p>
-                        <p class="text-[10px] text-muted truncate">{{ dev.email }}</p>
+                        <p class="text-highlighted truncate text-xs">
+                          {{ dev.name }}
+                        </p>
+                        <p class="text-[10px] text-muted truncate">
+                          {{ dev.email }}
+                        </p>
                       </div>
                     </div>
                   </td>
-                  <td class="text-right text-muted tabular-nums px-3 py-2.5 text-xs">{{ formatNumber(dev.sessions) }}</td>
-                  <td class="text-right text-muted tabular-nums px-3 py-2.5 text-xs">{{ formatNumber(dev.turns) }}</td>
-                  <td class="text-right text-muted tabular-nums px-3 py-2.5 text-xs">{{ formatCompactNumber(dev.totalTokens) }}</td>
-                  <td class="text-right text-muted tabular-nums px-3 py-2.5 text-xs">{{ formatCost(dev.estimatedCost) }}</td>
+                  <td class="text-right text-muted tabular-nums px-3 py-2.5 text-xs">
+                    {{ formatNumber(dev.sessions) }}
+                  </td>
+                  <td class="text-right text-muted tabular-nums px-3 py-2.5 text-xs">
+                    {{ formatNumber(dev.turns) }}
+                  </td>
+                  <td class="text-right text-muted tabular-nums px-3 py-2.5 text-xs">
+                    {{ formatCompactNumber(dev.totalTokens) }}
+                  </td>
+                  <td class="text-right text-muted tabular-nums px-3 py-2.5 text-xs">
+                    {{ formatCost(dev.estimatedCost) }}
+                  </td>
                   <td class="text-right text-muted tabular-nums px-4 py-2.5 text-xs">
                     {{ dev.lastActiveAt ? new Date(dev.lastActiveAt).toLocaleDateString() : '—' }}
                   </td>
@@ -787,20 +829,32 @@ function getSourceColor(index: number): string {
             </table>
           </div>
           <div v-else class="rounded-lg border border-dashed border-default p-6 text-center">
-            <p class="text-sm text-muted">No CLI usage data yet</p>
+            <p class="text-sm text-muted">
+              No CLI usage data yet
+            </p>
           </div>
         </section>
 
         <section v-if="cliStats.byModel.length > 0">
-          <h2 class="text-xs text-highlighted mb-3 font-pixel tracking-wide uppercase">By Model</h2>
+          <h2 class="text-xs text-highlighted mb-3 font-pixel tracking-wide uppercase">
+            By Model
+          </h2>
           <div class="rounded-lg border border-default overflow-hidden">
             <table class="w-full text-sm">
               <thead class="bg-elevated/50">
                 <tr class="border-b border-default text-xs text-muted">
-                  <th class="text-left font-medium px-4 py-2.5">Model</th>
-                  <th class="text-right font-medium px-3 py-2.5">Sessions</th>
-                  <th class="text-right font-medium px-3 py-2.5">Tokens</th>
-                  <th class="text-right font-medium px-4 py-2.5">Cost</th>
+                  <th class="text-left font-medium px-4 py-2.5">
+                    Model
+                  </th>
+                  <th class="text-right font-medium px-3 py-2.5">
+                    Sessions
+                  </th>
+                  <th class="text-right font-medium px-3 py-2.5">
+                    Tokens
+                  </th>
+                  <th class="text-right font-medium px-4 py-2.5">
+                    Cost
+                  </th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-default">
@@ -809,9 +863,15 @@ function getSourceColor(index: number): string {
                     <span class="text-highlighted">{{ formatModelName(m.model) }}</span>
                     <span class="text-xs text-muted block truncate max-w-64">{{ m.model }}</span>
                   </td>
-                  <td class="text-right text-muted tabular-nums px-3 py-2.5">{{ formatNumber(m.sessions) }}</td>
-                  <td class="text-right text-muted tabular-nums px-3 py-2.5">{{ formatCompactNumber(m.inputTokens + m.outputTokens) }}</td>
-                  <td class="text-right text-muted tabular-nums px-4 py-2.5">{{ m.totalCost > 0 ? formatCost(m.totalCost) : '—' }}</td>
+                  <td class="text-right text-muted tabular-nums px-3 py-2.5">
+                    {{ formatNumber(m.sessions) }}
+                  </td>
+                  <td class="text-right text-muted tabular-nums px-3 py-2.5">
+                    {{ formatCompactNumber(m.inputTokens + m.outputTokens) }}
+                  </td>
+                  <td class="text-right text-muted tabular-nums px-4 py-2.5">
+                    {{ m.totalCost > 0 ? formatCost(m.totalCost) : '—' }}
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -823,7 +883,9 @@ function getSourceColor(index: number): string {
         <div class="size-10 rounded-lg bg-elevated flex items-center justify-center mb-4">
           <UIcon name="i-lucide-terminal" class="size-5 text-muted" aria-hidden="true" />
         </div>
-        <p class="text-sm font-medium text-highlighted mb-1">No CLI usage data</p>
+        <p class="text-sm font-medium text-highlighted mb-1">
+          No CLI usage data
+        </p>
         <p class="text-xs text-muted text-center max-w-xs">
           Set up the CLI tracker hook to start collecting usage data from developers.
         </p>
