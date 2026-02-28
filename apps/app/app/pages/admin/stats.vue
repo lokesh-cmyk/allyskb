@@ -12,6 +12,18 @@ const selectedSources = ref<string[]>([])
 const selectedModels = ref<string[]>([])
 const chartMetric = ref<'tokens' | 'messages'>('tokens')
 
+const activeTab = ref<'app' | 'cli'>('app')
+
+const { data: cliStats, refresh: refreshCli, status: cliStatus } = useLazyFetch<CliUsageResponse>('/api/admin/cli-usage', {
+  query: computed(() => ({ days: selectedPeriod.value })),
+  watch: [selectedPeriod],
+  immediate: false,
+})
+
+watch(activeTab, (tab) => {
+  if (tab === 'cli' && !cliStats.value) refreshCli()
+})
+
 const cachedStats = useState<GlobalStatsResponse | null>('admin-stats', () => null)
 
 const { data: stats, refresh, status } = useLazyFetch<GlobalStatsResponse>('/api/stats', {
@@ -205,6 +217,24 @@ function getSourceColor(index: number): string {
           </p>
         </div>
         <div class="flex items-center gap-6">
+          <div class="flex items-center gap-1 border border-default rounded-lg p-0.5">
+            <UButton
+              size="xs"
+              :color="activeTab === 'app' ? 'primary' : 'neutral'"
+              :variant="activeTab === 'app' ? 'solid' : 'ghost'"
+              @click="activeTab = 'app'"
+            >
+              App Usage
+            </UButton>
+            <UButton
+              size="xs"
+              :color="activeTab === 'cli' ? 'primary' : 'neutral'"
+              :variant="activeTab === 'cli' ? 'solid' : 'ghost'"
+              @click="activeTab = 'cli'"
+            >
+              CLI Usage
+            </UButton>
+          </div>
           <div class="flex items-center gap-1">
             <UButton
               v-for="option in periodOptions"
@@ -224,15 +254,15 @@ function getSourceColor(index: number): string {
               color="neutral"
               variant="ghost"
               size="xs"
-              :loading="isRefreshing"
-              @click="refresh()"
+              :loading="isRefreshing || cliStatus === 'pending'"
+              @click="activeTab === 'cli' ? refreshCli() : refresh()"
             />
           </UTooltip>
         </div>
       </div>
     </header>
 
-    <div v-if="status === 'pending' && !stats">
+    <div v-if="status === 'pending' && !stats && activeTab === 'app'">
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
         <div v-for="i in 6" :key="i" class="rounded-lg border border-default bg-elevated/50 p-4">
           <USkeleton class="h-3 w-16 mb-2" />
@@ -247,7 +277,7 @@ function getSourceColor(index: number): string {
       </div>
     </div>
 
-    <template v-else-if="stats">
+    <template v-else-if="stats && activeTab === 'app'">
       <div
         class="transition-opacity duration-200"
         :class="isRefreshing ? 'opacity-50 pointer-events-none' : 'opacity-100'"
@@ -627,7 +657,7 @@ function getSourceColor(index: number): string {
       </div>
     </template>
 
-    <div v-else class="flex flex-col items-center py-16 border border-dashed border-default rounded-lg">
+    <div v-else-if="activeTab === 'app'" class="flex flex-col items-center py-16 border border-dashed border-default rounded-lg">
       <div class="size-10 rounded-lg bg-elevated flex items-center justify-center mb-4">
         <UIcon name="i-custom-chart" class="size-5 text-muted" aria-hidden="true" />
       </div>
@@ -638,5 +668,166 @@ function getSourceColor(index: number): string {
         Start chatting to generate usage statistics
       </p>
     </div>
+
+    <!-- CLI Usage Tab -->
+    <template v-if="activeTab === 'cli'">
+      <div v-if="cliStatus === 'pending' && !cliStats">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+          <div v-for="i in 6" :key="i" class="rounded-lg border border-default bg-elevated/50 p-4">
+            <USkeleton class="h-3 w-16 mb-2" />
+            <USkeleton class="h-7 w-12 mb-1" />
+          </div>
+        </div>
+        <USkeleton class="h-56 w-full rounded-lg" />
+      </div>
+
+      <template v-else-if="cliStats">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+          <div class="rounded-lg border border-default bg-elevated/50 p-4">
+            <p class="text-xs text-muted mb-1">Sessions</p>
+            <p class="text-2xl font-semibold text-highlighted tabular-nums">
+              {{ formatNumber(cliStats.totals.sessions) }}
+            </p>
+          </div>
+          <div class="rounded-lg border border-default bg-elevated/50 p-4">
+            <p class="text-xs text-muted mb-1">Turns</p>
+            <p class="text-2xl font-semibold text-highlighted tabular-nums">
+              {{ formatNumber(cliStats.totals.turns) }}
+            </p>
+          </div>
+          <div class="rounded-lg border border-default bg-elevated/50 p-4">
+            <p class="text-xs text-muted mb-1">Total Tokens</p>
+            <p class="text-2xl font-semibold text-highlighted tabular-nums">
+              {{ formatCompactNumber(cliStats.totals.totalTokens) }}
+            </p>
+          </div>
+          <div class="rounded-lg border border-default bg-elevated/50 p-4">
+            <p class="text-xs text-muted mb-1">Active Users</p>
+            <p class="text-2xl font-semibold text-highlighted tabular-nums">
+              {{ cliStats.totals.activeUsers }}
+            </p>
+          </div>
+          <div class="rounded-lg border border-default bg-elevated/50 p-4">
+            <p class="text-xs text-muted mb-1">Est. Cost</p>
+            <p class="text-2xl font-semibold text-highlighted tabular-nums">
+              {{ formatCost(cliStats.totals.estimatedCost) }}
+            </p>
+          </div>
+          <div class="rounded-lg border border-default bg-elevated/50 p-4">
+            <p class="text-xs text-muted mb-1">Avg Turns/Session</p>
+            <p class="text-2xl font-semibold text-highlighted tabular-nums">
+              {{ cliStats.totals.sessions > 0 ? Math.round(cliStats.totals.turns / cliStats.totals.sessions) : 0 }}
+            </p>
+          </div>
+        </div>
+
+        <section class="mb-10">
+          <h2 class="text-sm font-medium text-highlighted mb-3">CLI Usage Over Time</h2>
+          <div v-if="cliStats.daily.some(d => d.sessions > 0)" class="rounded-lg border border-default bg-elevated/50 p-4 overflow-hidden">
+            <div class="h-40 flex items-end gap-0.5 px-4">
+              <div
+                v-for="(day, index) in cliStats.daily"
+                :key="index"
+                class="flex-1 group"
+              >
+                <UTooltip
+                  :text="`${day.date} — ${day.sessions} sessions, ${formatCompactNumber(day.inputTokens + day.outputTokens)} tokens`"
+                  :content="{ side: 'top', sideOffset: 6 }"
+                >
+                  <div
+                    class="w-full bg-primary-500 rounded-t-sm transition-opacity group-hover:opacity-80 relative before:absolute before:inset-x-0 before:bottom-full before:h-40"
+                    :style="{ height: `${Math.max(1, (day.sessions / Math.max(...cliStats.daily.map(d => d.sessions), 1)) * 140)}px` }"
+                  />
+                </UTooltip>
+              </div>
+            </div>
+          </div>
+          <div v-else class="rounded-lg border border-dashed border-default p-6 text-center">
+            <p class="text-sm text-muted">No CLI usage data in this period</p>
+          </div>
+        </section>
+
+        <section class="mb-10">
+          <h2 class="text-xs text-highlighted mb-3 font-pixel tracking-wide uppercase">Usage By Developer</h2>
+          <div v-if="cliStats.byUser.length > 0" class="rounded-lg border border-default overflow-hidden">
+            <table class="w-full text-sm">
+              <thead class="bg-elevated/50">
+                <tr class="border-b border-default text-xs text-muted">
+                  <th class="text-left font-medium px-4 py-2.5">Developer</th>
+                  <th class="text-right font-medium px-3 py-2.5">Sessions</th>
+                  <th class="text-right font-medium px-3 py-2.5">Turns</th>
+                  <th class="text-right font-medium px-3 py-2.5">Tokens</th>
+                  <th class="text-right font-medium px-3 py-2.5">Est. Cost</th>
+                  <th class="text-right font-medium px-4 py-2.5">Last Active</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-default">
+                <tr v-for="dev in cliStats.byUser" :key="dev.userId" class="hover:bg-elevated/30">
+                  <td class="px-4 py-2">
+                    <div class="flex items-center gap-2">
+                      <img v-if="dev.image" :src="dev.image" :alt="dev.name" class="size-6 rounded-full">
+                      <div v-else class="size-6 rounded-full bg-muted/20 flex items-center justify-center">
+                        <UIcon name="i-lucide-user" class="size-3 text-muted" />
+                      </div>
+                      <div class="min-w-0">
+                        <p class="text-highlighted truncate text-xs">{{ dev.name }}</p>
+                        <p class="text-[10px] text-muted truncate">{{ dev.email }}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="text-right text-muted tabular-nums px-3 py-2.5 text-xs">{{ formatNumber(dev.sessions) }}</td>
+                  <td class="text-right text-muted tabular-nums px-3 py-2.5 text-xs">{{ formatNumber(dev.turns) }}</td>
+                  <td class="text-right text-muted tabular-nums px-3 py-2.5 text-xs">{{ formatCompactNumber(dev.totalTokens) }}</td>
+                  <td class="text-right text-muted tabular-nums px-3 py-2.5 text-xs">{{ formatCost(dev.estimatedCost) }}</td>
+                  <td class="text-right text-muted tabular-nums px-4 py-2.5 text-xs">
+                    {{ dev.lastActiveAt ? new Date(dev.lastActiveAt).toLocaleDateString() : '—' }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div v-else class="rounded-lg border border-dashed border-default p-6 text-center">
+            <p class="text-sm text-muted">No CLI usage data yet</p>
+          </div>
+        </section>
+
+        <section v-if="cliStats.byModel.length > 0">
+          <h2 class="text-xs text-highlighted mb-3 font-pixel tracking-wide uppercase">By Model</h2>
+          <div class="rounded-lg border border-default overflow-hidden">
+            <table class="w-full text-sm">
+              <thead class="bg-elevated/50">
+                <tr class="border-b border-default text-xs text-muted">
+                  <th class="text-left font-medium px-4 py-2.5">Model</th>
+                  <th class="text-right font-medium px-3 py-2.5">Sessions</th>
+                  <th class="text-right font-medium px-3 py-2.5">Tokens</th>
+                  <th class="text-right font-medium px-4 py-2.5">Cost</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-default">
+                <tr v-for="m in cliStats.byModel" :key="m.model" class="hover:bg-elevated/30">
+                  <td class="px-4 py-2.5">
+                    <span class="text-highlighted">{{ formatModelName(m.model) }}</span>
+                    <span class="text-xs text-muted block truncate max-w-64">{{ m.model }}</span>
+                  </td>
+                  <td class="text-right text-muted tabular-nums px-3 py-2.5">{{ formatNumber(m.sessions) }}</td>
+                  <td class="text-right text-muted tabular-nums px-3 py-2.5">{{ formatCompactNumber(m.inputTokens + m.outputTokens) }}</td>
+                  <td class="text-right text-muted tabular-nums px-4 py-2.5">{{ m.totalCost > 0 ? formatCost(m.totalCost) : '—' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </template>
+
+      <div v-else class="flex flex-col items-center py-16 border border-dashed border-default rounded-lg">
+        <div class="size-10 rounded-lg bg-elevated flex items-center justify-center mb-4">
+          <UIcon name="i-lucide-terminal" class="size-5 text-muted" aria-hidden="true" />
+        </div>
+        <p class="text-sm font-medium text-highlighted mb-1">No CLI usage data</p>
+        <p class="text-xs text-muted text-center max-w-xs">
+          Set up the CLI tracker hook to start collecting usage data from developers.
+        </p>
+      </div>
+    </template>
   </div>
 </template>
