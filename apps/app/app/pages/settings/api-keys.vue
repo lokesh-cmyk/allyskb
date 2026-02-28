@@ -75,7 +75,7 @@ function copyKey(key: string) {
         </h1>
       </div>
       <p class="text-sm text-muted max-w-lg">
-        Create personal API keys to authenticate with the SDK.
+        Create personal API keys to authenticate with the SDK or CLI usage tracker.
       </p>
     </header>
 
