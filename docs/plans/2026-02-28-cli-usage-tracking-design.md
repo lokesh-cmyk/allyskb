@@ -60,24 +60,14 @@ New `cliUsage` table:
 
 Indexed on: `userId`, `sessionId` (unique), `createdAt`.
 
-## New API token system
+## Authentication
 
-New `cliTokens` table:
+Reuses the existing Better Auth API key system (no new tables needed):
 
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| userId | UUID FK | Links to user table |
-| token | text (unique) | Hashed API token |
-| name | text | Token label (e.g. "Lokesh's laptop") |
-| lastUsedAt | timestamp | Updated on each API call |
-| createdAt | timestamp | Row created |
-
-Token flow:
-- Developer visits `/cli-auth` page (authenticated via existing OAuth)
-- Page generates a token, shows it once
-- Developer copies token to `~/.claude/cli-tracker-token`
-- Hook reads token and sends as `Authorization: Bearer <token>` header
+- Developer creates an API key from `/settings/api-keys` (already exists)
+- Better Auth's `apiKey` plugin with `enableSessionForAPIKeys: true` means any API key authenticates as the owning user
+- Hook sends the key via `Authorization: Bearer <key>` header
+- The `/api/cli-usage` endpoint uses `requireUserSession(event)` — works automatically with API keys
 
 ## Developer setup
 
@@ -104,9 +94,9 @@ Timeout: 10 seconds max.
 
 ## API endpoints
 
-### POST /api/cli-usage (public, token-authenticated)
+### POST /api/cli-usage (API-key authenticated)
 
-- Auth: Bearer token validated against `cliTokens` table
+- Auth: Better Auth API key via `requireUserSession(event)`
 - Body: `{ sessionId, project, model, inputTokens, outputTokens, turns, toolCalls, durationMs, startedAt, lastActiveAt, metadata }`
 - Action: Upsert `cliUsage` row by `sessionId`
 - Response: `{ ok: true }`
