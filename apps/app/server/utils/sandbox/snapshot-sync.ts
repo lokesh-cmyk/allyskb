@@ -77,8 +77,7 @@ export async function getSnapshotSyncStatus(): Promise<SnapshotSyncStatus> {
       needsSync,
       latestCreatedAt,
     }
-  }
-  catch (error) {
+  } catch (error) {
     console.error('Failed to fetch snapshot sync status:', error)
     return {
       currentSnapshotId: null,
