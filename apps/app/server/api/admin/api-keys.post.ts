@@ -12,7 +12,8 @@ export default defineEventHandler(async (event) => {
   requestLog.set({ adminUserId: user.id, keyName: body.name || 'Admin key' })
 
   const auth = serverAuth(event)
-  const result = await auth.api.createApiKey({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const result = await (auth.api as any).createApiKey({
     body: {
       name: body.name || 'Admin key',
       prefix: 'sk',

@@ -1,5 +1,5 @@
 import { stepCountIs, ToolLoopAgent, type StepResult, type ToolSet } from 'ai'
-import { DEFAULT_MODEL, getModelFallbackOptions } from '../router/schema'
+import { DEFAULT_MODEL, getModel } from '../router/schema'
 import { ADMIN_SYSTEM_PROMPT } from '../prompts/chat'
 import { compactContext } from '../core/context'
 import { callOptionsSchema } from '../core/schemas'
@@ -25,27 +25,26 @@ export function createAdminAgent({
   onFinish,
 }: AdminAgentOptions) {
   return new ToolLoopAgent({
-    model: DEFAULT_MODEL,
+    model: getModel(DEFAULT_MODEL),
     callOptionsSchema,
     prepareCall: ({ options, ...settings }) => {
       const modelOverride = (options as AgentCallOptions | undefined)?.model
       const customContext = (options as AgentCallOptions | undefined)?.context
-      const effectiveModel = modelOverride ?? DEFAULT_MODEL
+      const effectiveModelId = modelOverride ?? DEFAULT_MODEL
 
       const executionContext: AgentExecutionContext = {
         mode: 'admin',
-        effectiveModel,
+        effectiveModel: effectiveModelId,
         maxSteps,
         customContext,
       }
 
       return {
         ...settings,
-        model: effectiveModel,
+        model: getModel(effectiveModelId),
         instructions: systemPrompt,
         tools,
         stopWhen: stepCountIs(maxSteps),
-        providerOptions: getModelFallbackOptions(effectiveModel),
         experimental_context: executionContext,
       }
     },

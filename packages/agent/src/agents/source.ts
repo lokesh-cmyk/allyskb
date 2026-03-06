@@ -1,6 +1,6 @@
 import { stepCountIs, ToolLoopAgent, type StepResult, type ToolSet, type UIMessage } from 'ai'
 import { log } from 'evlog'
-import { DEFAULT_MODEL, getModelFallbackOptions } from '../router/schema'
+import { DEFAULT_MODEL, getModel } from '../router/schema'
 import { routeQuestion } from '../router/route-question'
 import { buildChatSystemPrompt } from '../prompts/chat'
 import { applyComplexity } from '../prompts/shared'
@@ -15,15 +15,15 @@ export interface SourceAgentOptions {
   tools: Record<string, unknown>
   getAgentConfig: () => Promise<AgentConfigData>
   messages: UIMessage[]
-  /** AI Gateway API key. Optional — falls back to OIDC on Vercel or AI_GATEWAY_API_KEY env var. */
-  apiKey?: string
   requestId?: string
   /** Falls back to agentConfig.defaultModel then DEFAULT_MODEL */
   defaultModel?: string
+  /** Toolkit slugs that are connected — controls which tools section appears in the system prompt */
+  connectedToolkits?: string[]
   onRouted?: (result: RoutingResult) => void
-   
+
   onStepFinish?: (stepResult: any) => void
-   
+
   onFinish?: (result: any) => void
 }
 
@@ -31,9 +31,9 @@ export function createSourceAgent({
   tools,
   getAgentConfig,
   messages,
-  apiKey,
   requestId,
   defaultModel = DEFAULT_MODEL,
+  connectedToolkits = [],
   onRouted,
   onStepFinish,
   onFinish,
@@ -42,26 +42,26 @@ export function createSourceAgent({
   let maxSteps = 15
 
   return new ToolLoopAgent({
-    model: DEFAULT_MODEL,
+    model: getModel(DEFAULT_MODEL),
     callOptionsSchema,
     prepareCall: async ({ options, ...settings }) => {
       const modelOverride = (options as AgentCallOptions | undefined)?.model
       const customContext = (options as AgentCallOptions | undefined)?.context
 
       const [routerConfig, agentConfig] = await Promise.all([
-        routeQuestion(messages, id, apiKey),
+        routeQuestion(messages, id),
         getAgentConfig(),
       ])
 
       const effectiveMaxSteps = Math.round(routerConfig.maxSteps * agentConfig.maxStepsMultiplier)
-      const effectiveModel = modelOverride ?? agentConfig.defaultModel ?? defaultModel
+      const effectiveModelId = modelOverride ?? agentConfig.defaultModel ?? defaultModel
 
       maxSteps = effectiveMaxSteps
-      onRouted?.({ routerConfig, agentConfig, effectiveModel, effectiveMaxSteps })
+      onRouted?.({ routerConfig, agentConfig, effectiveModel: effectiveModelId, effectiveMaxSteps })
 
       const executionContext: AgentExecutionContext = {
         mode: 'chat',
-        effectiveModel,
+        effectiveModel: effectiveModelId,
         maxSteps: effectiveMaxSteps,
         routerConfig,
         agentConfig,
@@ -70,11 +70,10 @@ export function createSourceAgent({
 
       return {
         ...settings,
-        model: effectiveModel,
-        instructions: applyComplexity(buildChatSystemPrompt(agentConfig), routerConfig),
+        model: getModel(effectiveModelId),
+        instructions: applyComplexity(buildChatSystemPrompt(agentConfig, connectedToolkits), routerConfig),
         tools: { ...tools, web_search: webSearchTool },
         stopWhen: stepCountIs(effectiveMaxSteps),
-        providerOptions: getModelFallbackOptions(effectiveModel),
         experimental_context: executionContext,
       }
     },

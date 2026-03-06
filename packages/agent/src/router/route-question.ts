@@ -1,9 +1,8 @@
-import { createGateway } from '@ai-sdk/gateway'
 import { generateText, Output } from 'ai'
 import type { UIMessage } from 'ai'
 import { log } from 'evlog'
 import { ROUTER_SYSTEM_PROMPT } from '../prompts/router'
-import { type AgentConfig, agentConfigSchema, getDefaultConfig, getModelFallbackOptions, ROUTER_MODEL } from './schema'
+import { type AgentConfig, agentConfigSchema, getDefaultConfig, getModel, ROUTER_MODEL } from './schema'
 
 function extractQuestionFromMessages(messages: UIMessage[]): string {
   const lastUserMessage = [...messages].reverse().find(m => m.role === 'user')
@@ -20,10 +19,7 @@ function extractQuestionFromMessages(messages: UIMessage[]): string {
 export async function routeQuestion(
   messages: UIMessage[],
   requestId: string,
-  apiKey?: string,
 ): Promise<AgentConfig> {
-  const gateway = createGateway(apiKey ? { apiKey } : undefined)
-
   const question = extractQuestionFromMessages(messages)
   if (!question) {
     log.info({ event: 'router.no_question', requestId })
@@ -32,13 +28,12 @@ export async function routeQuestion(
 
   try {
     const { output } = await generateText({
-      model: gateway(ROUTER_MODEL),
+      model: getModel(ROUTER_MODEL),
       output: Output.object({ schema: agentConfigSchema }),
       messages: [
         { role: 'system', content: ROUTER_SYSTEM_PROMPT },
         { role: 'user', content: `Question: ${question}` },
       ],
-      providerOptions: getModelFallbackOptions(ROUTER_MODEL),
     })
 
     if (!output) {

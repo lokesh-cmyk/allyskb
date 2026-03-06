@@ -6,51 +6,92 @@ useSeoMeta({ title: 'Connections' })
 const toast = useToast()
 const { showError } = useErrorToast()
 
-const { data: googleStatus, refresh, status } = useLazyAsyncData(
-  'google-connection',
-  () => $fetch('/api/connections/google'),
+const { data: connectionsData, refresh, status } = useLazyAsyncData(
+  'connections',
+  () => $fetch('/api/connections'),
   { server: false },
 )
 
-const isConnecting = ref(false)
-const isDisconnecting = ref(false)
+const toolkits = computed(() => connectionsData.value?.toolkits ?? [])
 
-const isConnected = computed(() => googleStatus.value?.connected ?? false)
+/** Human-readable labels for known toolkit slugs */
+const TOOLKIT_LABELS: Record<string, { name: string, icon: string, description: string }> = {
+  googlesuper: {
+    name: 'Google',
+    icon: 'i-simple-icons-google',
+    description: 'Gmail, Calendar, Drive, Sheets, Docs, Contacts, Tasks and more',
+  },
+  slack: {
+    name: 'Slack',
+    icon: 'i-simple-icons-slack',
+    description: 'Read and send messages, manage channels and workspaces',
+  },
+  notion: {
+    name: 'Notion',
+    icon: 'i-simple-icons-notion',
+    description: 'Read and update pages, databases, and blocks',
+  },
+  github: {
+    name: 'GitHub',
+    icon: 'i-simple-icons-github',
+    description: 'Manage issues, PRs, repos, and notifications',
+  },
+  linear: {
+    name: 'Linear',
+    icon: 'i-simple-icons-linear',
+    description: 'Create and manage issues, projects, and cycles',
+  },
+  jira: {
+    name: 'Jira',
+    icon: 'i-simple-icons-jira',
+    description: 'Manage issues, projects, and sprints',
+  },
+}
 
-async function connectGoogle() {
-  isConnecting.value = true
+function getToolkitMeta(slug: string) {
+  return TOOLKIT_LABELS[slug] ?? {
+    name: slug,
+    icon: 'i-lucide-plug',
+    description: `Connected via Composio (${slug})`,
+  }
+}
+
+const pendingMap = ref<Record<string, boolean>>({})
+
+async function connect(slug: string) {
+  pendingMap.value[slug] = true
   try {
-    const { connectUrl } = await $fetch('/api/connections/google', { method: 'POST' })
+    const { connectUrl } = await $fetch(`/api/connections/${slug}`, { method: 'POST' })
     window.open(connectUrl, '_blank')
     toast.add({ title: 'Complete the connection in the new tab, then click "Check status" here', icon: 'i-lucide-external-link' })
   } catch (e) {
-    showError(e, { fallback: 'Failed to start Google connection' })
+    showError(e, { fallback: `Failed to start ${getToolkitMeta(slug).name} connection` })
   } finally {
-    isConnecting.value = false
+    pendingMap.value[slug] = false
+  }
+}
+
+async function disconnect(slug: string) {
+  pendingMap.value[`del_${slug}`] = true
+  try {
+    await $fetch(`/api/connections/${slug}`, { method: 'DELETE' })
+    await refresh()
+    toast.add({ title: `${getToolkitMeta(slug).name} disconnected`, icon: 'i-lucide-check' })
+  } catch (e) {
+    showError(e, { fallback: `Failed to disconnect ${getToolkitMeta(slug).name}` })
+  } finally {
+    pendingMap.value[`del_${slug}`] = false
   }
 }
 
 // Re-check connection status when user returns to this tab after OAuth
 onMounted(() => {
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && !isConnected.value) {
+    if (document.visibilityState === 'visible') {
       refresh()
     }
   })
 })
-
-async function disconnectGoogle() {
-  isDisconnecting.value = true
-  try {
-    await $fetch('/api/connections/google', { method: 'DELETE' })
-    await refresh()
-    toast.add({ title: 'Google disconnected', icon: 'i-lucide-check' })
-  } catch (e) {
-    showError(e, { fallback: 'Failed to disconnect Google' })
-  } finally {
-    isDisconnecting.value = false
-  }
-}
 </script>
 
 <template>
@@ -65,7 +106,7 @@ async function disconnectGoogle() {
         </h1>
       </div>
       <p class="text-sm text-muted max-w-lg">
-        Manage your connected services for AI-powered tools.
+        Connect services so the AI can access your data and take actions on your behalf.
       </p>
     </header>
 
@@ -82,43 +123,57 @@ async function disconnectGoogle() {
             </div>
             <USkeleton class="h-8 w-20 rounded-md" />
           </div>
-          <div v-else class="flex items-center justify-between gap-4 px-4 py-3">
-            <div class="flex items-center gap-3">
-              <UIcon name="i-simple-icons-google" class="size-5 text-highlighted" />
-              <div>
-                <p class="text-sm text-highlighted">
-                  Google
-                </p>
-                <p class="text-xs text-muted">
-                  {{ isConnected ? 'Connected — Gmail, Calendar, Drive tools available in chat' : 'Not connected' }}
-                </p>
+
+          <template v-else-if="toolkits.length > 0">
+            <div
+              v-for="toolkit in toolkits"
+              :key="toolkit.slug"
+              class="flex items-center justify-between gap-4 px-4 py-3"
+            >
+              <div class="flex items-center gap-3">
+                <UIcon :name="getToolkitMeta(toolkit.slug).icon" class="size-5 text-highlighted" />
+                <div>
+                  <p class="text-sm text-highlighted">
+                    {{ getToolkitMeta(toolkit.slug).name }}
+                  </p>
+                  <p class="text-xs text-muted">
+                    {{ toolkit.connected ? `Connected — ${getToolkitMeta(toolkit.slug).description}` : 'Not connected' }}
+                  </p>
+                </div>
               </div>
-            </div>
-            <UButton
-              v-if="isConnected"
-              label="Disconnect"
-              color="neutral"
-              variant="ghost"
-              size="xs"
-              :loading="isDisconnecting"
-              @click="disconnectGoogle"
-            />
-            <div v-else class="flex items-center gap-2">
+
               <UButton
-                label="Connect"
-                size="xs"
-                :loading="isConnecting"
-                @click="connectGoogle"
-              />
-              <UButton
-                label="Check status"
+                v-if="toolkit.connected"
+                label="Disconnect"
                 color="neutral"
                 variant="ghost"
                 size="xs"
-                icon="i-lucide-refresh-cw"
-                @click="refresh()"
+                :loading="pendingMap[`del_${toolkit.slug}`]"
+                @click="disconnect(toolkit.slug)"
               />
+              <div v-else class="flex items-center gap-2">
+                <UButton
+                  label="Connect"
+                  size="xs"
+                  :loading="pendingMap[toolkit.slug]"
+                  @click="connect(toolkit.slug)"
+                />
+                <UButton
+                  label="Check status"
+                  color="neutral"
+                  variant="ghost"
+                  size="xs"
+                  icon="i-lucide-refresh-cw"
+                  @click="refresh()"
+                />
+              </div>
             </div>
+          </template>
+
+          <div v-else class="px-4 py-6 text-center">
+            <p class="text-sm text-muted">
+              No integrations configured. Add toolkit slugs to <code class="font-mono text-xs">COMPOSIO_TOOLKIT_SLUGS</code> to enable connections.
+            </p>
           </div>
         </div>
       </section>

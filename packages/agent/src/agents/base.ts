@@ -1,6 +1,6 @@
 import { stepCountIs, ToolLoopAgent, type StepResult, type ToolSet } from 'ai'
 import { log } from 'evlog'
-import { DEFAULT_MODEL, getModelFallbackOptions } from '../router/schema'
+import { DEFAULT_MODEL, getModel } from '../router/schema'
 import { compactContext } from '../core/context'
 import { callOptionsSchema } from '../core/schemas'
 import { sanitizeToolCallInputs } from '../core/sanitize'
@@ -21,7 +21,7 @@ export function createAgent({
   let maxSteps = 15
 
   return new ToolLoopAgent({
-    model: DEFAULT_MODEL,
+    model: getModel(DEFAULT_MODEL),
     callOptionsSchema,
     prepareCall: async ({ options, ...settings }) => {
       const modelOverride = (options as AgentCallOptions | undefined)?.model
@@ -33,17 +33,17 @@ export function createAgent({
       ])
 
       const effectiveMaxSteps = Math.round(routerConfig.maxSteps * agentConfig.maxStepsMultiplier)
-      const routedModel = resolveModel?.(routerConfig, agentConfig)
+      const routedModelId = resolveModel?.(routerConfig, agentConfig)
         ?? agentConfig.defaultModel
         ?? DEFAULT_MODEL
-      const effectiveModel = modelOverride ?? routedModel
+      const effectiveModelId = modelOverride ?? routedModelId
 
       maxSteps = effectiveMaxSteps
-      onRouted?.({ routerConfig, agentConfig, effectiveModel, effectiveMaxSteps })
+      onRouted?.({ routerConfig, agentConfig, effectiveModel: effectiveModelId, effectiveMaxSteps })
 
       const executionContext: AgentExecutionContext = {
         mode: 'chat',
-        effectiveModel,
+        effectiveModel: effectiveModelId,
         maxSteps: effectiveMaxSteps,
         routerConfig,
         agentConfig,
@@ -52,11 +52,10 @@ export function createAgent({
 
       return {
         ...settings,
-        model: effectiveModel,
+        model: getModel(effectiveModelId),
         instructions: buildPrompt(routerConfig, agentConfig),
         tools: { ...tools, web_search: webSearchTool },
         stopWhen: stepCountIs(effectiveMaxSteps),
-        providerOptions: getModelFallbackOptions(effectiveModel),
         experimental_context: executionContext,
       }
     },

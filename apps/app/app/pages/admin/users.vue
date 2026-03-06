@@ -1,6 +1,11 @@
 <script setup lang="ts">
-import { getPaginationRowModel, getSortedRowModel } from '@tanstack/vue-table'
+import { getPaginationRowModel } from '@tanstack/vue-table'
+import type { Table } from '@tanstack/vue-table'
 import type { TableColumn } from '@nuxt/ui'
+
+interface UTableExposed {
+  tableApi: Table<AdminUserRow>
+}
 
 useSeoMeta({ title: 'Users - Admin' })
 
@@ -22,7 +27,7 @@ const toast = useToast()
 const { showError } = useErrorToast()
 const { user: currentUser } = useUserSession()
 
-const table = useTemplateRef('table')
+const table = useTemplateRef<UTableExposed>('table')
 const savingUserId = ref<string | null>(null)
 const deletingUserId = ref<string | null>(null)
 const userToDelete = ref<AdminUserRow | null>(null)
@@ -323,8 +328,7 @@ async function changeRole(row: AdminUserRow, newRole: UserRole) {
         :data="users ?? []"
         :columns
         :loading="status === 'pending' && !users"
-        :global-filter-options="{ filterFn: 'custom' }"
-        :sorting-options="{ getSortedRowModel: getSortedRowModel() }"
+        :sorting-options="{}"
         :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
       >
         <template #name-cell="{ row }">
@@ -538,6 +542,7 @@ async function changeRole(row: AdminUserRow, newRole: UserRole) {
               <label class="text-xs text-muted mb-1 block">Role</label>
               <USelectMenu
                 v-model="inviteForm.role"
+                value-key="value"
                 :items="[
                   { label: 'User', value: 'user' },
                   { label: 'Admin', value: 'admin' },

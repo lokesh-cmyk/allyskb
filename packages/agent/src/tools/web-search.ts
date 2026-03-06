@@ -1,9 +1,6 @@
 import { generateText, tool } from 'ai'
-import { createGateway } from '@ai-sdk/gateway'
-import { openai } from '@ai-sdk/openai'
 import { z } from 'zod'
-
-const gateway = createGateway()
+import { getModel } from '../router/schema'
 
 export const webSearchTool = tool({
   description: 'Search the web for up-to-date information. Use when you need current data, recent events, or facts not available in the documentation.',
@@ -16,9 +13,7 @@ export const webSearchTool = tool({
 
     try {
       const { text, sources } = await generateText({
-        model: gateway('openai/gpt-5-chat'),
-        tools: { web_search: openai.tools.webSearch() } as Parameters<typeof generateText>[0]['tools'],
-        toolChoice: { type: 'tool', toolName: 'web_search' },
+        model: getModel('perplexity/sonar'),
         prompt: query,
         abortSignal,
       })

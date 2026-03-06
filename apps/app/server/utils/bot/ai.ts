@@ -6,7 +6,7 @@ import {
   createAgent,
   DEFAULT_MODEL,
   getDefaultConfig,
-  getModelFallbackOptions,
+  getModel,
   ROUTER_MODEL,
   ROUTER_SYSTEM_PROMPT,
   buildBotSystemPrompt,
@@ -41,13 +41,12 @@ function buildRouterInput(question: string, context?: ThreadContext): string {
 async function routeQuestion(question: string, context?: ThreadContext): Promise<AgentConfig> {
   try {
     const { output } = await generateText({
-      model: ROUTER_MODEL,
+      model: getModel(ROUTER_MODEL),
       output: Output.object({ schema: agentConfigSchema }),
       messages: [
         { role: 'system', content: ROUTER_SYSTEM_PROMPT },
         { role: 'user', content: buildRouterInput(question, context) },
       ],
-      providerOptions: getModelFallbackOptions(ROUTER_MODEL),
     })
 
     if (!output) {
@@ -104,12 +103,11 @@ export async function generateAIResponse(
     if (!result.text?.trim()) {
       log.info('bot', 'Agent produced no text, forcing fallback generation')
       const fallback = await generateText({
-        model: DEFAULT_MODEL,
+        model: getModel(DEFAULT_MODEL),
         messages: [
           { role: 'user', content: buildBotUserMessage(question, context) },
           ...result.response.messages,
         ],
-        providerOptions: getModelFallbackOptions(DEFAULT_MODEL),
       })
       if (fallback.text?.trim()) {
         return fallback.text
@@ -139,6 +137,7 @@ export async function generateAIResponse(
 \`\`\`
 ${errorMessage}
 \`\`\`
+
 </details>
 
 Please try again later or open a discussion if this persists.`

@@ -1,5 +1,3 @@
-import { createGateway } from '@ai-sdk/gateway'
-
 interface ModelPricing {
   input: number // cost per token in USD
   output: number
@@ -8,24 +6,28 @@ interface ModelPricing {
 type PricingRecord = Record<string, ModelPricing>
 
 export const getModelPricingMap = defineCachedFunction(
-  async (apiKey?: string): Promise<PricingRecord> => {
+  async (): Promise<PricingRecord> => {
     try {
-      const gateway = createGateway(apiKey ? { apiKey } : undefined)
-      const { models } = await gateway.getAvailableModels()
+      const apiKey = process.env.OPENROUTER_API_KEY
+      if (!apiKey) return {}
 
+      const res = await fetch('https://openrouter.ai/api/v1/models', {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      })
+      if (!res.ok) return {}
+
+      const { data } = await res.json() as { data: Array<{ id: string, pricing?: { prompt: string, completion: string } }> }
       const pricing: PricingRecord = {}
-      for (const model of models) {
+      for (const model of data) {
         if (model.pricing) {
           pricing[model.id] = {
-            input: parseFloat(model.pricing.input),
-            output: parseFloat(model.pricing.output),
+            input: parseFloat(model.pricing.prompt),
+            output: parseFloat(model.pricing.completion),
           }
         }
       }
-
       return pricing
     } catch {
-      // Return empty record on failure — cost will show as $0
       return {}
     }
   },

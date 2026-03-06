@@ -1,8 +1,21 @@
-import type { SharedV3ProviderOptions } from '@ai-sdk/provider'
+import { createOpenAI } from '@ai-sdk/openai'
 import { z } from 'zod'
 
 export const ROUTER_MODEL = 'google/gemini-2.5-flash-lite'
-export const DEFAULT_MODEL = 'google/gemini-3-flash'
+export const DEFAULT_MODEL = 'google/gemini-2.5-flash'
+
+function createProvider() {
+  const apiKey = process.env.OPENROUTER_API_KEY
+  if (!apiKey) throw new Error('OPENROUTER_API_KEY is not set')
+  return createOpenAI({
+    apiKey,
+    baseURL: 'https://openrouter.ai/api/v1',
+  })
+}
+
+export function getModel(modelId: string) {
+  return createProvider().chat(modelId)
+}
 
 export const agentConfigSchema = z.object({
   complexity: z.enum(['trivial', 'simple', 'moderate', 'complex'])
@@ -12,9 +25,9 @@ export const agentConfigSchema = z.object({
     .describe('Agent iterations: 4 trivial, 8 simple, 15 moderate, 25 complex'),
 
   model: z.enum([
-    'google/gemini-3-flash',
-    'anthropic/claude-sonnet-4.6',
-    'anthropic/claude-opus-4.6',
+    'google/gemini-2.5-flash',
+    'anthropic/claude-sonnet-4-6',
+    'anthropic/claude-opus-4-6',
   ]).describe('flash for trivial/simple, sonnet for moderate, opus for complex'),
 
   reasoning: z.string().max(200)
@@ -27,20 +40,7 @@ export function getDefaultConfig(): AgentConfig {
   return {
     complexity: 'moderate',
     maxSteps: 15,
-    model: 'anthropic/claude-sonnet-4.6',
+    model: 'anthropic/claude-sonnet-4-6',
     reasoning: 'Default fallback configuration',
   }
-}
-
-const MODEL_FALLBACKS: Record<string, string[]> = {
-  'google/gemini-3-flash': ['anthropic/claude-sonnet-4.6', 'openai/gpt-4o'],
-  'anthropic/claude-sonnet-4.6': ['google/gemini-3-flash', 'openai/gpt-4o'],
-  'anthropic/claude-opus-4.6': ['anthropic/claude-sonnet-4.6', 'google/gemini-3-flash'],
-  'google/gemini-2.5-flash-lite': ['google/gemini-3-flash', 'openai/gpt-4o-mini'],
-}
-
-export function getModelFallbackOptions(model: string): SharedV3ProviderOptions | undefined {
-  const fallbacks = MODEL_FALLBACKS[model]
-  if (!fallbacks?.length) return undefined
-  return { gateway: { models: fallbacks } }
 }

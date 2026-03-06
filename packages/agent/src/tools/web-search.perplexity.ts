@@ -1,8 +1,6 @@
 import { generateText, tool } from 'ai'
-import { createGateway } from '@ai-sdk/gateway'
 import { z } from 'zod'
-
-const gateway = createGateway()
+import { getModel } from '../router/schema'
 
 export const webSearchTool = tool({
   description: 'Search the web for up-to-date information. Use when you need current data, recent events, or facts not available in the documentation.',
@@ -15,7 +13,7 @@ export const webSearchTool = tool({
 
     try {
       const { text, sources } = await generateText({
-        model: gateway('perplexity/sonar'),
+        model: getModel('perplexity/sonar'),
         prompt: query,
         abortSignal,
       })

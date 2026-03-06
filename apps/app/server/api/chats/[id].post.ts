@@ -105,9 +105,22 @@ export default defineEventHandler(async (event) => {
     })
 
     let composioTools: Record<string, unknown> = {}
+    let connectedToolkits: string[] = []
     if (!isAdminChat) {
       try {
         composioTools = await getComposioTools(user.id)
+        if (Object.keys(composioTools).length > 0) {
+          // Infer which toolkit slugs are connected from the tool names
+          // Composio tool names are prefixed with the toolkit slug (e.g. GOOGLESUPER_GMAIL_SEND_EMAIL)
+          const toolNames = Object.keys(composioTools)
+          connectedToolkits = COMPOSIO_TOOLKIT_SLUGS.filter((slug: string) =>
+            toolNames.some(name => name.toLowerCase().startsWith(slug.toLowerCase())),
+          )
+          // If no prefix matched but tools exist, include all configured slugs
+          if (connectedToolkits.length === 0) {
+            connectedToolkits = COMPOSIO_TOOLKIT_SLUGS
+          }
+        }
       } catch {
         // Composio unavailable — continue with sandbox tools only
       }
@@ -167,6 +180,7 @@ export default defineEventHandler(async (event) => {
         getAgentConfig,
         messages,
         defaultModel: model,
+        connectedToolkits,
         requestId,
         onRouted: ({ routerConfig, agentConfig, effectiveModel: routedModel, effectiveMaxSteps }) => {
           effectiveModel = routedModel

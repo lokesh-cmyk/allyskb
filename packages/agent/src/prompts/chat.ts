@@ -44,7 +44,7 @@ You have access to admin tools that query the application's internal data:
 
 export const ADMIN_SYSTEM_PROMPT = buildAdminSystemPrompt()
 
-export const BASE_SYSTEM_PROMPT = `You are an AI assistant that answers questions using documentation available in a sandbox.
+const BASE_SYSTEM_PROMPT = `You are an AI assistant that answers questions using documentation available in a sandbox.
 {{TEMPORAL_CONTEXT}}
 
 ## CRITICAL: Sources First
@@ -127,28 +127,46 @@ You have access to a \`search_web\` tool for finding information NOT in the sand
 - Include relevant code examples when available
 - Use markdown formatting
 - Cite the source file path
-
-## Google Tools
-
-You have access to Google tools that operate on the user's connected Google account, covering these services:
-
-- **Gmail** — send, read, search, draft, label, and manage emails and threads
-- **Calendar** — create, list, update, delete events; manage calendars and availability
-- **Drive** — create, copy, move, share, and search files and folders; manage permissions
-- **Sheets** — create, read, update spreadsheets; manage sheets, charts, filters, and cell data
-- **Docs** — create, read, and update Google Docs documents
-- **Contacts** — search, create, update, and manage contacts
-- **Tasks** — create, list, update, and manage tasks and task lists
-- **Photos** — search photos, create albums, manage media items
-- **Maps/Routes** — compute routes, directions, and route matrices
-- **Analytics** — run reports, manage properties, audiences, and data streams
-
-**When to use:** Any time the user asks about their personal Google data — emails, calendar, files, contacts, tasks, photos, etc.
-**Priority:** Always search sandbox documentation FIRST. Only use Google tools for personal data queries.
-**Auth errors:** If a tool returns an authentication error, tell the user to connect their Google account in Settings > Connections.
-**Cross-service:** When a request spans multiple services, combine tools as needed.
 `
 
-export function buildChatSystemPrompt(agentConfigData: AgentConfigData): string {
-  return applyAgentConfig(applyTemporalContext(BASE_SYSTEM_PROMPT), agentConfigData)
+/** Descriptions for known Composio toolkit slugs */
+const TOOLKIT_DESCRIPTIONS: Record<string, string> = {
+  googlesuper: 'Gmail, Calendar, Drive, Sheets, Docs, Contacts, Tasks, Photos, Maps, and Analytics — for the user\'s personal Google account',
+  slack: 'Read and send Slack messages, manage channels, reactions, and workspaces',
+  notion: 'Read and update Notion pages, databases, and blocks',
+  github: 'Manage GitHub issues, pull requests, repos, and notifications',
+  linear: 'Create and manage Linear issues, projects, and cycles',
+  jira: 'Manage Jira issues, projects, sprints, and boards',
+}
+
+function buildConnectedToolsSection(connectedToolkits: string[]): string {
+  if (connectedToolkits.length === 0) return ''
+
+  const lines = connectedToolkits.map((slug) => {
+    const desc = TOOLKIT_DESCRIPTIONS[slug] ?? `${slug} — tools available via Composio`
+    const label = slug === 'googlesuper' ? 'Google (googlesuper)' : slug
+    return `- **${label}**: ${desc}`
+  })
+
+  return `
+## Connected Tools
+
+You have access to the following tools through the user's connected accounts. Use them whenever the user asks about their personal data in these services.
+
+${lines.join('\n')}
+
+**When to use:** For personal data queries (emails, calendar, files, messages, etc.) — not for documentation lookups.
+**Priority:** Always search sandbox documentation FIRST. Only use connected tools for personal data queries.
+**Auth errors:** If a tool returns an authentication error, tell the user to reconnect the service in Settings > Connections.
+**Cross-service:** Combine tools from multiple services when needed.
+`
+}
+
+export function buildChatSystemPrompt(agentConfigData: AgentConfigData, connectedToolkits: string[] | boolean = []): string {
+  // Support legacy boolean (hasGoogleTools) for backwards compat
+  const toolkits = Array.isArray(connectedToolkits)
+    ? connectedToolkits
+    : connectedToolkits ? ['googlesuper'] : []
+  const base = BASE_SYSTEM_PROMPT + buildConnectedToolsSection(toolkits)
+  return applyAgentConfig(applyTemporalContext(base), agentConfigData)
 }

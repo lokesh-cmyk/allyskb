@@ -1,17 +1,14 @@
 import type { UIMessage } from 'ai'
 import { generateText } from 'ai'
-import { createGateway } from '@ai-sdk/gateway'
 import { db, schema } from '@nuxthub/db'
 import { eq } from 'drizzle-orm'
 import { log } from 'evlog'
-import { ROUTER_MODEL, getModelFallbackOptions } from '@savoir/agent'
+import { ROUTER_MODEL, getModel } from '@savoir/agent'
 
 interface GenerateTitleOptions {
   firstMessage: UIMessage
   chatId: string
   requestId: string
-  /** AI Gateway API key. Optional — falls back to OIDC on Vercel or AI_GATEWAY_API_KEY env var. */
-  apiKey?: string
 }
 
 /**
@@ -19,16 +16,14 @@ interface GenerateTitleOptions {
  * Returns the generated title, or null on failure.
  * The DB write always happens regardless of what the caller does with the result.
  */
-export async function generateTitle({ firstMessage, chatId, requestId, apiKey }: GenerateTitleOptions): Promise<string | null> {
+export async function generateTitle({ firstMessage, chatId, requestId }: GenerateTitleOptions): Promise<string | null> {
   try {
-    const gateway = createGateway(apiKey ? { apiKey } : undefined)
     const { text: title } = await generateText({
-      model: gateway(ROUTER_MODEL),
+      model: getModel(ROUTER_MODEL),
       system: `Generate a short chat title (max 30 chars) from the user's message.
 Rules: no quotes, no colons, no punctuation, plain text only.
 If the message is a simple greeting (hi, hey, hello, etc.), respond with a generic title like "New conversation" or "Quick chat".`,
       prompt: JSON.stringify(firstMessage),
-      providerOptions: getModelFallbackOptions(ROUTER_MODEL),
     })
 
     await db.update(schema.chats).set({ title }).where(eq(schema.chats.id, chatId))
