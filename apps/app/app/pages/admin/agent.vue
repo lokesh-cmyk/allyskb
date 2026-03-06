@@ -92,9 +92,9 @@ const languageOptions = [
 
 const modelOptions = [
   { value: 'auto', label: 'Automatic (Recommended)' },
-  { value: 'google/gemini-2.5-flash-lite', label: 'Fast' },
-  { value: 'google/gemini-3-flash', label: 'Balanced' },
-  { value: 'anthropic/claude-opus-4.5', label: 'Advanced' },
+  { value: 'google/gemini-2.0-flash-lite-001', label: 'Fast' },
+  { value: 'google/gemini-2.5-flash-preview-05-20', label: 'Balanced' },
+  { value: 'anthropic/claude-sonnet-4-6', label: 'Advanced' },
 ]
 
 async function saveConfig() {

@@ -43,7 +43,7 @@ export async function getConnectedToolkits(userId: string, toolkitSlugs: string[
     statuses: ['ACTIVE'],
   })
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return accounts.items.map((a: any) => a.toolkitSlug ?? a.toolkit ?? a.appName ?? '').filter(Boolean)
+  return accounts.items.map((a: any) => a.toolkit?.slug ?? '').filter(Boolean)
 }
 
 /**

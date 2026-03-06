@@ -15,12 +15,12 @@ export function formatModelName(modelId: string): string {
 
 export function useModels() {
   const models = [
-    'google/gemini-3-flash',
-    'anthropic/claude-sonnet-4.6',
-    'anthropic/claude-opus-4.6',
+    'google/gemini-2.5-flash-preview-05-20',
+    'anthropic/claude-sonnet-4-6',
+    'anthropic/claude-opus-4-6',
   ]
 
-  const model = useCookie<string>('model', { default: () => 'anthropic/claude-sonnet-4.6' })
+  const model = useCookie<string>('model', { default: () => 'anthropic/claude-sonnet-4-6' })
 
   return {
     models,

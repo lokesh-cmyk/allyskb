@@ -1,8 +1,8 @@
 import { createOpenAI } from '@ai-sdk/openai'
 import { z } from 'zod'
 
-export const ROUTER_MODEL = 'google/gemini-2.5-flash-lite'
-export const DEFAULT_MODEL = 'google/gemini-2.5-flash'
+export const ROUTER_MODEL = 'google/gemini-2.0-flash-lite-001'
+export const DEFAULT_MODEL = 'google/gemini-2.5-flash-preview-05-20'
 
 function createProvider() {
   const apiKey = process.env.OPENROUTER_API_KEY
@@ -25,7 +25,7 @@ export const agentConfigSchema = z.object({
     .describe('Agent iterations: 4 trivial, 8 simple, 15 moderate, 25 complex'),
 
   model: z.enum([
-    'google/gemini-2.5-flash',
+    'google/gemini-2.5-flash-preview-05-20',
     'anthropic/claude-sonnet-4-6',
     'anthropic/claude-opus-4-6',
   ]).describe('flash for trivial/simple, sonnet for moderate, opus for complex'),
